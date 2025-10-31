@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoodFilm - Find the perfect movie for your mood</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      /* Base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+        color: #2d3748;
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      /* Scene container */
+      .scene {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(50px);
+        transition: opacity 1s ease, transform 1s ease;
+      }
+
+      .scene.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Title scene */
+      #scene1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        text-align: center;
+        color: white;
+      }
+
+      .logo {
+        font-size: 6rem;
+        margin-bottom: 2rem;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        animation: pulse 3s infinite;
+      }
+
+      h1 {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: white;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .subtitle {
+        font-size: 1.8rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .presenter {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      /* Problem scene */
+      #scene2 {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        color: #2d3748;
+      }
+
+      .problem-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 800px;
+        text-align: center;
+      }
+
+      .problem-title {
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        color: #2d3748;
+      }
+
+      .problem-list {
+        list-style: none;
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .problem-list li {
+        margin: 1rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .problem-icon {
+        margin-right: 1rem;
+        color: #e53e3e;
+      }
+
+      .problem-image {
+        width: 300px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        margin-top: 1rem;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        color: #2d3748;
+      }
+
+      /* Idea scene */
+      #scene3 {
+        background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        color: #2d3748;
+      }
+
+      .idea-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 900px;
+      }
+
+      .idea-title {
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        color: #2d3748;
+      }
+
+      .mood-selector {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .mood-option {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        color: #2d3748;
+      }
+
+      .mood-option:hover {
+        transform: scale(1.1);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .mood-emoji {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .movie-result {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 10px;
+        text-align: center;
+        max-width: 500px;
+        display: none;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Value proposition scene */
+      #scene4 {
+        background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+        color: #2d3748;
+      }
+
+      .value-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        max-width: 1000px;
+      }
+
+      .value-card {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+      }
+
+      .value-card:hover {
+        transform: translateY(-10px);
+      }
+
+      .value-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #38a169;
+      }
+
+      .value-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+      }
+
+      .value-tags {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .tag {
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: #2d3748;
+      }
+
+      /* Business model scene */
+      #scene5 {
+        background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        padding: 1rem;
+        justify-content: flex-start;
+        overflow-y: auto;
+        color: #2d3748;
+      }
+
+      .business-container {
+        max-width: 1100px;
+        text-align: center;
+        margin-top: 1rem;
+      }
+
+      .business-title {
+        font-size: 2.8rem;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+      }
+
+      .model-intro {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: #4a5568;
+      }
+
+      .model-comparison {
+        display: flex;
+        justify-content: space-between;
+        margin: 1.5rem 0;
+        gap: 1.5rem;
+      }
+
+      .model-free,
+      .model-premium {
+        flex: 1;
+        padding: 1.5rem;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .model-premium {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #805ad5;
+      }
+
+      .model-title {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+      }
+
+      .features-list {
+        list-style: none;
+        text-align: left;
+        margin-bottom: 1rem;
+        flex-grow: 1;
+      }
+
+      .features-list li {
+        margin: 0.6rem 0;
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+      }
+
+      .check-icon {
+        margin-right: 0.5rem;
+        color: #38a169;
+      }
+
+      .price-tag {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-top: auto;
+      }
+
+      .free-price {
+        color: #2d3748;
+      }
+
+      .premium-price {
+        color: #805ad5;
+      }
+
+      .themes-section {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .themes-title {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+      }
+
+      .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+      }
+
+      .theme-item {
+        padding: 0.7rem 0.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.85rem;
+        transition: transform 0.2s, background 0.3s;
+        color: #2d3748;
+      }
+
+      .theme-item:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Personas Scene - UPDATED AVATAR STYLING */
+      #scene6 {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        padding: 1rem;
+        justify-content: flex-start;
+        overflow-y: auto;
+        color: #2d3748;
+      }
+
+      .personas-container {
+        max-width: 1200px;
+        text-align: center;
+      }
+
+      .personas-title {
+        font-size: 2.8rem;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+      }
+
+      .personas-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .persona-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+      }
+
+      .persona-card:hover {
+        transform: translateY(-10px);
+      }
+
+      /* PERFECTLY CENTERED AVATAR CONTAINER */
+      .avatar-container {
+        width: 160px;
+        height: 160px;
+        margin: 0 auto 1.5rem;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        border: 4px solid rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f8f9fa;
+      }
+
+      .persona-avatar {
+        width: 130%;
+        height: 130%;
+        object-fit: cover;
+        object-position: center center;
+        transition: transform 0.3s ease;
+      }
+
+      .persona-card:hover .persona-avatar {
+        transform: scale(1.05);
+      }
+
+      .persona-name {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+      }
+
+      .persona-role {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: #4a5568;
+      }
+
+      .persona-bio {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        text-align: left;
+        color: #4a5568;
+      }
+
+      .persona-traits {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        justify-content: center;
+      }
+
+      .trait {
+        padding: 0.3rem 0.7rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        font-size: 0.8rem;
+        color: #2d3748;
+      }
+
+      .persona-motivation {
+        font-size: 0.9rem;
+        font-style: italic;
+        color: #4a5568;
+        text-align: left;
+      }
+
+      /* Scenarios Scene - UPDATED WITH AVATARS */
+      #scene7 {
+        background: linear-gradient(135deg, #a3bded 0%, #6991c7 100%);
+        padding: 1rem;
+        justify-content: flex-start;
+        overflow-y: auto;
+        color: #2d3748;
+      }
+
+      .scenarios-container {
+        max-width: 1100px;
+        text-align: center;
+      }
+
+      .scenarios-title {
+        font-size: 2.8rem;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+      }
+
+      .scenarios-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .scenario-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: left;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .scenario-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      /* SCENARIO AVATAR - PERFECTLY CENTERED */
+      .scenario-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 3px solid rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f8f9fa;
+        flex-shrink: 0;
+      }
+
+      .scenario-avatar-img {
+        width: 130%;
+        height: 125%;
+        object-fit: cover;
+        object-position: center center;
+      }
+
+      .scenario-persona {
+        font-size: 1.4rem;
+        color: #2d3748;
+      }
+
+      .scenario-goal {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: #4a5568;
+      }
+
+      .scenario-section {
+        margin-bottom: 1.5rem;
+      }
+
+      .scenario-section-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+      }
+
+      .scenario-tasks {
+        list-style: none;
+        padding-left: 1rem;
+      }
+
+      .scenario-tasks li {
+        margin-bottom: 0.5rem;
+        position: relative;
+        padding-left: 1.5rem;
+        color: #4a5568;
+      }
+
+      .scenario-tasks li:before {
+        content: "•";
+        color: #4299e1;
+        position: absolute;
+        left: 0;
+      }
+
+      /* User Stories Scene */
+      #scene8 {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        padding: 1rem;
+        justify-content: flex-start;
+        overflow-y: auto;
+        color: #2d3748;
+      }
+
+      .stories-container {
+        max-width: 1100px;
+        text-align: center;
+      }
+
+      .stories-title {
+        font-size: 2.8rem;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+      }
+
+      .stories-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .story-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: left;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .story-title {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+      }
+
+      .story-content {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        color: #4a5568;
+      }
+
+      .acceptance-criteria {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 1rem;
+      }
+
+      .criteria-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+      }
+
+      .criteria-list {
+        list-style: none;
+        padding-left: 1rem;
+      }
+
+      .criteria-list li {
+        margin-bottom: 0.5rem;
+        position: relative;
+        padding-left: 1.5rem;
+        color: #4a5568;
+      }
+
+      .criteria-list li:before {
+        content: "✓";
+        color: #38a169;
+        position: absolute;
+        left: 0;
+      }
+
+      .definitions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 3rem;
+        align-items: flex-start;
+      }
+
+      .definition-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: left;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .definition-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+    
+        text-align: left;
+      }
+
+      .definition-list {
+        list-style: none;
+        padding-left: 1rem;
+      }
+
+      .definition-list li {
+        margin-bottom: 0.8rem;
+        position: relative;
+        padding-left: 1.5rem;
+        color: #4a5568;
+      }
+
+      .definition-list li:before {
+        content: "•";
+        color: #4299e1;
+        position: absolute;
+        left: 0;
+      }
+
+      /* Navigation */
+      .nav-dots {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        z-index: 100;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(45, 55, 72, 0.3);
+        cursor: pointer;
+        transition: background 0.3s, transform 0.3s;
+      }
+
+      .dot.active {
+        background: #2d3748;
+        transform: scale(1.3);
+      }
+
+      /* ⚡ LIGHTNING ARROWS - SUPER PROMINENT ⚡ */
+      .nav-arrows {
+        position: fixed;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+        display: flex;
+        justify-content: space-between;
+        padding: 0 2rem;
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      .arrow {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        pointer-events: all;
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.6),
+          0 0 40px rgba(102, 126, 234, 0.4), 0 0 60px rgba(102, 126, 234, 0.2);
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        color: white;
+        font-size: 2rem;
+        animation: lightningPulse 2s infinite;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .arrow::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transform: rotate(45deg);
+        animation: lightningFlash 3s infinite;
+      }
+
+      .arrow:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 30px rgba(102, 126, 234, 0.8),
+          0 0 60px rgba(102, 126, 234, 0.6), 0 0 90px rgba(102, 126, 234, 0.4);
+        animation: lightningPulseFast 0.5s infinite;
+      }
+
+      .arrow:active {
+        transform: scale(0.95);
+        transition: transform 0.1s;
+      }
+
+      /* Arrow labels */
+      .arrow-label {
+        position: absolute;
+        background: rgba(45, 55, 72, 0.9);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+        backdrop-filter: blur(10px);
+      }
+
+      .prev-arrow-label {
+        right: -20px;
+        top: 50%;
+        transform: translateY(-50%) translateX(20px);
+      }
+
+      .next-arrow-label {
+        left: -20px;
+        top: 50%;
+        transform: translateY(-50%) translateX(-20px);
+      }
+
+      .arrow:hover .arrow-label {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+      }
+
+      /* Navigation hint for first scene */
+      .nav-hint {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        color: #2d3748;
+        padding: 15px 25px;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        z-index: 100;
+        animation: bounceHint 2s infinite;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav-hint i {
+        color: #667eea;
+        font-size: 1.3rem;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes lightningPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 20px rgba(102, 126, 234, 0.6),
+            0 0 40px rgba(102, 126, 234, 0.4), 0 0 60px rgba(102, 126, 234, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(102, 126, 234, 0.8),
+            0 0 60px rgba(102, 126, 234, 0.6), 0 0 90px rgba(102, 126, 234, 0.4);
+        }
+      }
+
+      @keyframes lightningPulseFast {
+        0%,
+        100% {
+          box-shadow: 0 0 25px rgba(102, 126, 234, 0.8),
+            0 0 50px rgba(102, 126, 234, 0.6), 0 0 75px rgba(102, 126, 234, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 35px rgba(102, 126, 234, 1),
+            0 0 70px rgba(102, 126, 234, 0.8),
+            0 0 105px rgba(102, 126, 234, 0.6);
+        }
+      }
+
+      @keyframes lightningFlash {
+        0%,
+        100% {
+          transform: rotate(45deg) translateX(-100%);
+        }
+        50% {
+          transform: rotate(45deg) translateX(100%);
+        }
+      }
+
+      @keyframes bounceHint {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+          transform: translateX(-50%) translateY(0);
+        }
+        40% {
+          transform: translateX(-50%) translateY(-10px);
+        }
+        60% {
+          transform: translateX(-50%) translateY(-5px);
+        }
+      }
+
+      .floating {
+        animation: float 5s ease-in-out infinite;
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .theme-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .personas-grid {
+          grid-template-columns: 1fr;
+        }
+        .stories-grid {
+          grid-template-columns: 1fr;
+        }
+        .definitions {
+          grid-template-columns: 1fr;
+        }
+        .avatar-container {
+          width: 140px;
+          height: 140px;
+        }
+        .arrow {
+          width: 70px;
+          height: 70px;
+          font-size: 1.7rem;
+        }
+        .nav-hint {
+          font-size: 1rem;
+          padding: 12px 20px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+        .subtitle {
+          font-size: 1.2rem;
+        }
+        .logo {
+          font-size: 4rem;
+        }
+        .value-container {
+          grid-template-columns: 1fr;
+        }
+        .model-comparison {
+          flex-direction: column;
+        }
+        .theme-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .nav-dots {
+          right: 1rem;
+        }
+        .business-title {
+          font-size: 2.2rem;
+        }
+        .model-title {
+          font-size: 1.4rem;
+        }
+        .nav-arrows {
+          padding: 0 1rem;
+        }
+        .arrow {
+          width: 60px;
+          height: 60px;
+          font-size: 1.5rem;
+        }
+        .personas-title,
+        .scenarios-title,
+        .stories-title {
+          font-size: 2.2rem;
+        }
+        .avatar-container {
+          width: 120px;
+          height: 120px;
+        }
+        .scenario-avatar {
+          width: 70px;
+          height: 70px;
+        }
+        .scenario-header {
+          flex-direction: column;
+          text-align: center;
+        }
+        .scenario-avatar {
+          margin-right: 0;
+          margin-bottom: 1rem;
+        }
+        .nav-hint {
+          font-size: 0.9rem;
+          padding: 10px 16px;
+          bottom: 20px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .theme-grid {
+          grid-template-columns: 1fr;
+        }
+        .scene {
+          padding: 1rem;
+        }
+        .arrow {
+          width: 50px;
+          height: 50px;
+          font-size: 1.3rem;
+        }
+        .nav-arrows {
+          padding: 0 0.5rem;
+        }
+        .persona-card,
+        .scenario-card,
+        .story-card {
+          padding: 1.5rem;
+        }
+        .avatar-container {
+          width: 100px;
+          height: 100px;
+        }
+        .scenario-avatar {
+          width: 60px;
+          height: 60px;
+        }
+        .nav-hint {
+          font-size: 0.8rem;
+          padding: 8px 14px;
+          bottom: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation hint for first scene -->
+    <div class="nav-hint" id="navHint">
+      <i class="fas fa-arrow-left"></i>
+      Use these arrows to navigate
+      <i class="fas fa-arrow-right"></i>
+    </div>
+
+    <!-- Scene 1: Title -->
+    <section id="scene1" class="scene active">
+      <div class="logo">🎬</div>
+      <h1>MoodFilm</h1>
+      <p class="subtitle">Find the perfect movie for your mood</p>
+      <p class="presenter">
+        👤 Team DIE letzte Reihe!| DHBW Stuttgart | Software Engineering Project
+      </p>
+    </section>
+
+    <!-- Scene 2: The Problem -->
+    <section id="scene2" class="scene">
+      <div class="problem-container">
+        <h2 class="problem-title">The Problem</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 2rem">
+          Choosing a movie sounds simple — but it isn't.
+        </p>
+        <ul class="problem-list">
+          <li>
+            <i class="fas fa-clock problem-icon"></i> People waste 20–30 minutes
+            scrolling through platforms
+          </li>
+          <li>
+            <i class="fas fa-brain problem-icon"></i> Current algorithms focus
+            on watch history, not feelings
+          </li>
+          <li>
+            <i class="fas fa-frown problem-icon"></i> Your mood is ignored,
+            which causes frustration
+          </li>
+        </ul>
+        <div class="problem-image">
+          <p>Endless scrolling through streaming platforms</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 3: The Idea -->
+    <section id="scene3" class="scene">
+      <div class="idea-container">
+        <h2 class="idea-title">The Idea</h2>
+        <p style="font-size: 1.5rem; text-align: center; max-width: 700px">
+          MoodFilm helps you discover movies based on how you feel. Select your
+          mood and instantly receive movie suggestions that match it.
+        </p>
+        <div class="mood-selector">
+          <div class="mood-option" data-mood="happy">
+            <span class="mood-emoji">😄</span>
+            <span>Happy</span>
+          </div>
+          <div class="mood-option" data-mood="sad">
+            <span class="mood-emoji">😢</span>
+            <span>Sad</span>
+          </div>
+          <div class="mood-option" data-mood="romantic">
+            <span class="mood-emoji">❤️</span>
+            <span>Romantic</span>
+          </div>
+          <div class="mood-option" data-mood="thrilled">
+            <span class="mood-emoji">😱</span>
+            <span>Thrilled</span>
+          </div>
+        </div>
+        <div class="movie-result" id="movieResult">
+          <h3>Recommended for you:</h3>
+          <p id="movieTitle">Movie Title</p>
+          <p id="movieDescription">Movie description will appear here</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 4: Value Proposition -->
+    <section id="scene4" class="scene">
+      <div class="value-container">
+        <div class="value-card">
+          <div class="value-icon"><i class="fas fa-user-circle"></i></div>
+          <h3 class="value-title">Personalization</h3>
+          <p>
+            Tailored to emotions, not algorithms. MoodFilm understands how you
+            feel right now.
+          </p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon"><i class="fas fa-stopwatch"></i></div>
+          <h3 class="value-title">Time Saving</h3>
+          <p>
+            Decide in seconds, not minutes. No more endless scrolling through
+            streaming platforms.
+          </p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon"><i class="fas fa-gem"></i></div>
+          <h3 class="value-title">Discovery</h3>
+          <p>
+            Find hidden gems that fit your mood. Discover movies you wouldn't
+            have found otherwise.
+          </p>
+        </div>
+      </div>
+      <div class="value-tags">
+        <div class="tag">Fast</div>
+        <div class="tag">Emotional</div>
+        <div class="tag">Smart</div>
+      </div>
+    </section>
+
+    <!-- Scene 5: Business Model -->
+    <section id="scene5" class="scene">
+      <div class="business-container">
+        <h2 class="business-title">Business Model</h2>
+        <p class="model-intro">
+          Freemium with premium features and affiliate revenue
+        </p>
+
+        <div class="model-comparison">
+          <div class="model-free">
+            <h3 class="model-title">Free</h3>
+            <ul class="features-list">
+              <li><i class="fas fa-check check-icon"></i> Basic moods</li>
+              <li>
+                <i class="fas fa-check check-icon"></i> Limited recommendations
+              </li>
+              <li>
+                <i
+                  class="fas fa-times"
+                  style="color: #e53e3e; margin-right: 0.5rem"
+                ></i>
+                Contains ads
+              </li>
+            </ul>
+            <p class="price-tag free-price">€0/month</p>
+          </div>
+
+          <div class="model-premium">
+            <h3 class="model-title">Premium</h3>
+            <ul class="features-list">
+              <li>
+                <i class="fas fa-check check-icon"></i> All moods & emotions
+              </li>
+              <li><i class="fas fa-check check-icon"></i> Exclusive themes</li>
+              <li>
+                <i class="fas fa-check check-icon"></i> Ad-free experience
+              </li>
+              <li><i class="fas fa-check check-icon"></i> Save favorites</li>
+              <li>
+                <i class="fas fa-check check-icon"></i> AI recommendations
+              </li>
+            </ul>
+            <p class="price-tag premium-price">€2.99/month</p>
+          </div>
+        </div>
+
+        <div class="themes-section">
+          <h3 class="themes-title">Premium Themes</h3>
+          <div class="theme-grid">
+            <div class="theme-item">🎀 Girls' Night In</div>
+            <div class="theme-item">👨‍👩‍👧 Family Night</div>
+            <div class="theme-item">🧛 Halloween Mode</div>
+            <div class="theme-item">❤️ Date Night</div>
+            <div class="theme-item">🎓 Teen Vibes</div>
+            <div class="theme-item">💪 Motivation & Growth</div>
+            <div class="theme-item">🌧️ Rainy Sunday</div>
+            <div class="theme-item">✈️ Travel Escape</div>
+            <div class="theme-item">🧘 Chill & Relax</div>
+            <div class="theme-item">😎 Feel-Good Weekend</div>
+            <div class="theme-item">🎄 Christmas Spirit</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 6: Personas - UPDATED WITH PERFECT AVATARS -->
+    <section id="scene6" class="scene">
+      <div class="personas-container">
+        <h2 class="personas-title">User Personas</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 2rem; color: #4a5568">
+          Understanding our target users
+        </p>
+
+        <div class="personas-grid">
+          <div class="persona-card">
+            <div class="avatar-container">
+              <img src="Emma.png" alt="Emma - Student" class="persona-avatar" />
+            </div>
+            <h3 class="persona-name">Emma, 23</h3>
+            <p class="persona-role">Student</p>
+            <p class="persona-bio">
+              Emma studies media design and loves watching movies at night to
+              relax after studying. She often feels overwhelmed by too many
+              streaming choices.
+            </p>
+            <div class="persona-traits">
+              <span class="trait">Emotional</span>
+              <span class="trait">Creative</span>
+              <span class="trait">Social media user</span>
+              <span class="trait">Loves aesthetics</span>
+            </div>
+            <p class="persona-motivation">
+              Wants to quickly find something that fits her current mood — no
+              endless scrolling.
+            </p>
+          </div>
+
+          <div class="persona-card">
+            <div class="avatar-container">
+              <img
+                src="Max.png"
+                alt="Max - Software Engineer"
+                class="persona-avatar"
+              />
+            </div>
+            <h3 class="persona-name">Max, 35</h3>
+            <p class="persona-role">Software Engineer</p>
+            <p class="persona-bio">
+              Max works full-time and has limited time for entertainment. When
+              he finally gets some free time, he wants a great movie that
+              matches how he feels.
+            </p>
+            <div class="persona-traits">
+              <span class="trait">Efficient</span>
+              <span class="trait">Analytical</span>
+              <span class="trait">Impatient with poor UI</span>
+              <span class="trait">Loves personalization</span>
+            </div>
+            <p class="persona-motivation">
+              Wants smart, time-saving recommendations.
+            </p>
+          </div>
+
+          <div class="persona-card">
+            <div class="avatar-container">
+              <img
+                src="sophie.png"
+                alt="Sophie - Mother of Two"
+                class="persona-avatar"
+              />
+            </div>
+            <h3 class="persona-name">Sophie, 42</h3>
+            <p class="persona-role">Mother of Two</p>
+            <p class="persona-bio">
+              Sophie loves movie nights with her family but struggles to find
+              something everyone enjoys.
+            </p>
+            <div class="persona-traits">
+              <span class="trait">Organized</span>
+              <span class="trait">Practical</span>
+              <span class="trait">Family-centered</span>
+            </div>
+            <p class="persona-motivation">
+              Wants a simple way to pick a movie for "Family Night" without
+              arguments.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 7: Scenarios - UPDATED WITH AVATARS -->
+    <section id="scene7" class="scene">
+      <div class="scenarios-container">
+        <h2 class="scenarios-title">User Scenarios</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 2rem; color: #4a5568">
+          How users interact with MoodFilm
+        </p>
+
+        <div class="scenarios-list">
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-avatar">
+                <img src="Emma.png" alt="Emma" class="scenario-avatar-img" />
+              </div>
+              <h3 class="scenario-persona">"Late-night Chill" (Emma)</h3>
+            </div>
+            <p class="scenario-goal">
+              Emma wants to find a relaxing movie before bed without spending 20
+              minutes scrolling.
+            </p>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Tasks:</h4>
+              <ul class="scenario-tasks">
+                <li>Opens MoodFilm</li>
+                <li>Chooses "Chill & Relax" theme</li>
+                <li>Browses suggested movies</li>
+                <li>Picks one and starts watching</li>
+              </ul>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Challenges:</h4>
+              <p>
+                Too many similar options on other platforms; wants emotional
+                match.
+              </p>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Solution:</h4>
+              <p>
+                MoodFilm filters by emotional tone → soft colors, relaxing
+                soundtrack previews, AI-curated "calm" picks.
+              </p>
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-avatar">
+                <img
+                  src="sophie.png"
+                  alt="Sophie"
+                  class="scenario-avatar-img"
+                />
+              </div>
+              <h3 class="scenario-persona">"Family Movie Night" (Sophie)</h3>
+            </div>
+            <p class="scenario-goal">
+              Sophie wants to find a family-friendly movie that fits everyone's
+              mood.
+            </p>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Tasks:</h4>
+              <ul class="scenario-tasks">
+                <li>Opens MoodFilm</li>
+                <li>Selects "Family Night" theme</li>
+                <li>Filters by "All ages"</li>
+                <li>Checks movie descriptions and ratings</li>
+              </ul>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Challenges:</h4>
+              <p>Balancing interests of kids and adults.</p>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Solution:</h4>
+              <p>
+                Curated playlists for family nights, sorted by humor, animation,
+                and adventure.
+              </p>
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-header">
+              <div class="scenario-avatar">
+                <img src="Max.png" alt="Max" class="scenario-avatar-img" />
+              </div>
+              <h3 class="scenario-persona">"After a Hard Day at Work" (Max)</h3>
+            </div>
+            <p class="scenario-goal">
+              Max wants a movie that matches his mood after a long day.
+            </p>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Tasks:</h4>
+              <ul class="scenario-tasks">
+                <li>Opens MoodFilm</li>
+                <li>Selects "Tired" or "Motivation & Growth" mood</li>
+                <li>Gets recommendations with uplifting tone</li>
+              </ul>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Challenges:</h4>
+              <p>Wants something meaningful but not too heavy.</p>
+            </div>
+
+            <div class="scenario-section">
+              <h4 class="scenario-section-title">Solution:</h4>
+              <p>
+                Personalized suggestions based on positive IMDb sentiment
+                analysis or motivational keywords.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 8: User Stories -->
+    <section id="scene8" class="scene">
+      <div class="stories-container">
+        <h2 class="stories-title">User Stories & Requirements</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 2rem; color: #4a5568">
+          Defining what we need to build
+        </p>
+
+        <div class="stories-grid">
+          <div class="story-card">
+            <h3 class="story-title">User Story 1</h3>
+            <p class="story-content">
+              As a movie lover, I want to choose movies based on my mood, so
+              that I can enjoy a film that matches my emotions.
+            </p>
+            <div class="acceptance-criteria">
+              <h4 class="criteria-title">Acceptance criteria:</h4>
+              <ul class="criteria-list">
+                <li>
+                  User can select a mood (e.g., happy, sad, excited, romantic)
+                </li>
+                <li>Movies are recommended according to the selected mood</li>
+                <li>
+                  User can start watching directly from the recommendation
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="story-card">
+            <h3 class="story-title">User Story 2</h3>
+            <p class="story-content">
+              As a premium user, I want access to special themes like Girls'
+              Night In or Family Night, so that I can easily find fitting movies
+              for specific occasions.
+            </p>
+            <div class="acceptance-criteria">
+              <h4 class="criteria-title">Acceptance criteria:</h4>
+              <ul class="criteria-list">
+                <li>Premium users see exclusive theme filters</li>
+                <li>Each theme provides a curated list of relevant movies</li>
+                <li>Non-premium users see a "locked" icon prompting upgrade</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="story-card">
+            <h3 class="story-title">User Story 3</h3>
+            <p class="story-content">
+              As a time-constrained user, I want quick and accurate movie
+              recommendations, so that I don't waste time scrolling through
+              endless options.
+            </p>
+            <div class="acceptance-criteria">
+              <h4 class="criteria-title">Acceptance criteria:</h4>
+              <ul class="criteria-list">
+                <li>The system loads recommendations within 3 seconds</li>
+                <li>The top 5 movies always match the selected mood</li>
+                <li>
+                  User satisfaction feedback can be submitted ("Good match / Bad
+                  match")
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="story-card">
+            <h3 class="story-title">User Story 4</h3>
+            <p class="story-content">
+              As a casual viewer, I want to save my favorite moods and movies,
+              so that I can re-watch or get similar recommendations later.
+            </p>
+            <div class="acceptance-criteria">
+              <h4 class="criteria-title">Acceptance criteria:</h4>
+              <ul class="criteria-list">
+                <li>User can bookmark moods and movies</li>
+                <li>Favorites are stored in the user profile</li>
+                <li>Bookmarked movies influence future recommendations</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="story-card">
+            <h3 class="story-title">User Story 5</h3>
+            <p class="story-content">
+              As a parent, I want to apply family-safe filters, so that I can
+              avoid inappropriate content during family nights.
+            </p>
+            <div class="acceptance-criteria">
+              <h4 class="criteria-title">Acceptance criteria:</h4>
+              <ul class="criteria-list">
+                <li>Family-friendly filter hides adult-rated content</li>
+                <li>Parental control PIN available</li>
+                <li>Family Night mode defaults to safe selections</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+<div class="definitions">
+  <div class="definition-card">
+    <h3 class="definition-title">✅ Definition of Done (DoD)</h3>
+    <ul class="definition-list">
+      <li>All planned features (mood-based recommendation, premium themes, favorites, parental filter) are fully implemented and tested</li>
+      <li>Frontend and backend are successfully integrated and stable</li>
+      <li>All critical bugs are resolved and non-critical issues documented</li>
+      <li>Performance goals are met (e.g., recommendation loads &lt; 3 seconds)</li>
+      <li>Security and privacy standards (API key handling, user data) are ensured</li>
+      <li>UI/UX has been reviewed and validated through user testing</li>
+      <li>Documentation for setup, usage, and maintenance is complete</li>
+      <li>The product has been deployed to a public or demo environment</li>
+      <li>Final acceptance testing with stakeholders (teacher / users) is completed</li>
+    </ul>
+  </div>
+
+  <div class="definition-card">
+    <h3 class="definition-title">🟢 Definition of Ready (DoR)</h3>
+    <ul class="definition-list">
+      <li>Personas and scenarios for the story have been validated by the team</li>
+      <li>The story’s acceptance criteria are clearly defined and testable</li>
+      <li>Effort estimation (story points or time) has been completed</li>
+      <li>API sources and endpoints are identified and accessible</li>
+      <li>Dependencies or blockers have been clarified</li>
+    </ul>
+  </div>
+</div>
+
+    </section>
+
+    <!-- Navigation -->
+    <div class="nav-dots">
+      <div class="dot active" data-scene="1"></div>
+      <div class="dot" data-scene="2"></div>
+      <div class="dot" data-scene="3"></div>
+      <div class="dot" data-scene="4"></div>
+      <div class="dot" data-scene="5"></div>
+      <div class="dot" data-scene="6"></div>
+      <div class="dot" data-scene="7"></div>
+      <div class="dot" data-scene="8"></div>
+    </div>
+
+    <!-- ⚡ LIGHTNING ARROWS - SUPER PROMINENT ⚡ -->
+    <div class="nav-arrows">
+      <div class="arrow" id="prevArrow">
+        <i class="fas fa-chevron-left"></i>
+        <div class="arrow-label prev-arrow-label">Previous Slide</div>
+      </div>
+      <div class="arrow" id="nextArrow">
+        <i class="fas fa-chevron-right"></i>
+        <div class="arrow-label next-arrow-label">Next Slide</div>
+      </div>
+    </div>
+
+    <script>
+      // Scene management
+      const scenes = document.querySelectorAll(".scene");
+      const dots = document.querySelectorAll(".dot");
+      const navHint = document.getElementById("navHint");
+      let currentScene = 1;
+      const totalScenes = scenes.length;
+
+      // Show specific scene
+      function showScene(sceneNumber) {
+        scenes.forEach((scene) => {
+          scene.classList.remove("active");
+        });
+        dots.forEach((dot) => {
+          dot.classList.remove("active");
+        });
+
+        const targetScene = document.getElementById(`scene${sceneNumber}`);
+        targetScene.classList.add("active");
+        document
+          .querySelector(`.dot[data-scene="${sceneNumber}"]`)
+          .classList.add("active");
+        currentScene = sceneNumber;
+
+        // Hide navigation hint after first scene
+        if (sceneNumber > 1) {
+          navHint.style.display = "none";
+        }
+
+        // Scroll to the top of the scene
+        window.scrollTo({
+          top: targetScene.offsetTop,
+          behavior: "smooth",
+        });
+      }
+
+      // Navigation with dots
+      dots.forEach((dot) => {
+        dot.addEventListener("click", () => {
+          const sceneNumber = parseInt(dot.getAttribute("data-scene"));
+          showScene(sceneNumber);
+        });
+      });
+
+      // Navigation with arrows
+      document.getElementById("nextArrow").addEventListener("click", () => {
+        if (currentScene < totalScenes) {
+          showScene(currentScene + 1);
+        } else {
+          // Loop back to first scene
+          showScene(1);
+        }
+      });
+
+      document.getElementById("prevArrow").addEventListener("click", () => {
+        if (currentScene > 1) {
+          showScene(currentScene - 1);
+        } else {
+          // Loop to last scene
+          showScene(totalScenes);
+        }
+      });
+
+      // Mood selector interaction
+      const moodOptions = document.querySelectorAll(".mood-option");
+      const movieResult = document.getElementById("movieResult");
+      const movieTitle = document.getElementById("movieTitle");
+      const movieDescription = document.getElementById("movieDescription");
+
+      // Sample movie data
+      const movies = {
+        happy: {
+          title: "The Grand Budapest Hotel",
+          description:
+            "A whimsical comedy about a legendary hotel concierge and his protégé.",
+        },
+        sad: {
+          title: "The Pursuit of Happyness",
+          description:
+            "A struggling salesman takes custody of his son as he pursues a better life.",
+        },
+        romantic: {
+          title: "La La Land",
+          description:
+            "A jazz musician and an aspiring actress fall in love while pursuing their dreams.",
+        },
+        thrilled: {
+          title: "Inception",
+          description:
+            "A thief who steals corporate secrets through dream-sharing technology.",
+        },
+      };
+
+      moodOptions.forEach((option) => {
+        option.addEventListener("click", () => {
+          const mood = option.getAttribute("data-mood");
+          movieTitle.textContent = movies[mood].title;
+          movieDescription.textContent = movies[mood].description;
+          movieResult.style.display = "block";
+
+          // Add floating animation to selected mood
+          moodOptions.forEach((opt) => opt.classList.remove("floating"));
+          option.classList.add("floating");
+        });
+      });
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") {
+          if (currentScene < totalScenes) {
+            showScene(currentScene + 1);
+          } else {
+            showScene(1);
+          }
+        } else if (e.key === "ArrowLeft") {
+          if (currentScene > 1) {
+            showScene(currentScene - 1);
+          } else {
+            showScene(totalScenes);
+          }
+        }
+      });
+
+      // Hide navigation hint after 8 seconds
+      setTimeout(() => {
+        if (navHint.style.display !== "none") {
+          navHint.style.opacity = "0";
+          setTimeout(() => {
+            navHint.style.display = "none";
+          }, 500);
+        }
+      }, 8000);
+
+      // Initial animation
+      setTimeout(() => {
+        document.querySelector(".logo").style.animation = "pulse 3s infinite";
+      }, 500);
+    </script>
+  </body>
+</html>
