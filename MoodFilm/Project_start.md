@@ -5,14 +5,14 @@ Instead of genres, it focuses on **emotional discovery**, delivering meaningful,
 
 ---
 
-## 🌈 Project Vision
+## Project Vision
 
 MoodFilm redefines movie discovery by connecting emotions to storytelling.  
 Users express how they _feel_, and the app curates movies that resonate with that emotion — through tone, color, pacing, and theme.
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 | Layer                | Technology                                                     |
 | -------------------- | -------------------------------------------------------------- |
@@ -26,7 +26,7 @@ Users express how they _feel_, and the app curates movies that resonate with tha
 
 ---
 
-## 🧩 Architecture Overview
+## Architecture Overview
 
 MoodFilm follows a **modular full-stack architecture** with clear separation of concerns:
 
@@ -60,7 +60,7 @@ moodfilm/
 
 ---
 
-## 🚀 Phase 1 — MVP Development Roadmap
+## Phase 1 — MVP Development Roadmap
 
 ### 🔧 Step 1: Environment Setup
 
@@ -94,7 +94,7 @@ moodfilm/
 
 ---
 
-### 🎨 Step 2: Frontend Initialization
+### Step 2: Frontend Initialization
 
 **Goal**: Create the mood selection and movie display interface.
 
@@ -118,7 +118,7 @@ moodfilm/
 
 ---
 
-### ⚡ Step 3: Backend Initialization
+### Step 3: Backend Initialization
 
 **Goal**: Build TMDB route and mood mapping logic.
 
@@ -140,7 +140,7 @@ moodfilm/
 
 ---
 
-### 🧠 Step 4: Core Algorithm Implementation
+### Step 4: Core Algorithm Implementation
 
 - Build a **mood-to-genre mapping** (e.g., via JSON or Prisma table):
   ```json
@@ -155,7 +155,7 @@ moodfilm/
 
 ---
 
-### 🔐 Step 5: Authentication (Phase 1.5)
+### Step 5: Authentication (Phase 1.5)
 
 - Add JWT-based auth routes:
   - `/auth/register`, `/auth/login`, `/auth/me`
@@ -164,7 +164,7 @@ moodfilm/
 
 ---
 
-### 💾 Step 6: Database Entities (Prisma)
+### Step 6: Database Entities (Prisma)
 
 ```prisma
 model User {
@@ -185,7 +185,7 @@ model Favorite {
 
 ---
 
-## 🧱 Folder-by-Folder Development Order
+## Folder-by-Folder Development Order
 
 | Order | Folder                                   | Focus                 |
 | ----- | ---------------------------------------- | --------------------- |
@@ -198,7 +198,7 @@ model Favorite {
 
 ---
 
-## 🗓 Roadmap
+## Roadmap
 
 | Phase     | Focus                                   | Status         |
 | --------- | --------------------------------------- | -------------- |
@@ -210,7 +210,7 @@ model Favorite {
 
 ---
 
-## 🧠 Future Enhancements
+## Future Enhancements
 
 - Emotion-based background music or visuals
 - ChatGPT-powered conversational mood input
@@ -218,7 +218,7 @@ model Favorite {
 
 ---
 
-## 🧰 Development Commands
+## Development Commands
 
 | Command              | Description                                        |
 | -------------------- | -------------------------------------------------- |
@@ -231,7 +231,7 @@ model Favorite {
 
 ---
 
-## 👥 Team & Attribution
+## Team & Attribution
 
 - **Project Lead & Developer:** Amine Lejmi
 - **APIs:** [TMDB](https://www.themoviedb.org/documentation/api)
@@ -239,6 +239,6 @@ model Favorite {
 
 ---
 
-## 📜 License
+## License
 
 MIT License © 2025 Amine Lejmi
