@@ -1,6 +1,6 @@
 # StudyBot — AI-Powered Learning Tool
 
-> DHBW Software Engineering Projekt | 3. Semester
+> DHBW Software Engineering Projekt | 4. Semester
 
 AI-gestütztes Lern-Tool das aus Vorlesungstexten automatisch Karteikarten, Zusammenfassungen und Quizfragen generiert.
 
