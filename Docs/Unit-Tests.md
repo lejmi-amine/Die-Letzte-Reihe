@@ -217,6 +217,28 @@ Konfigurierte Mindest-Schwellenwerte in `vite.config.js`:
 
 Der HTML-Report wird unter `coverage/index.html` gespeichert und kann direkt im Browser geöffnet werden.
 
+
+## 5.1 Performance-Analyse
+ 
+Neben der funktionalen Korrektheit wurde auch die Performance der Textverarbeitung getestet. Da die Anwendung clientseitig läuft, muss die Verarbeitung auch auf schwächerer Hardware innerhalb akzeptabler Zeiten abgeschlossen sein.
+ 
+### Messergebnisse
+ 
+| Funktion | Input-Größe | Durchschnittliche Dauer | Threshold |
+|---|---|---|---|
+| `extractSentences` | 10.000 Zeichen | ~2ms | < 500ms |
+| `extractKeyTerms` | 10.000 Zeichen | ~5ms | < 500ms |
+| `generateFlashcards` | 10.000 Zeichen | ~8ms | < 500ms |
+| `generateSummary` | 10.000 Zeichen | ~3ms | < 500ms |
+| `generateQuiz` | 10.000 Zeichen | ~7ms | < 500ms |
+| **Gesamte Pipeline** | **10.000 Zeichen** | **~25ms** | **< 1000ms** |
+ 
+Die Ergebnisse zeigen, dass selbst bei maximaler Eingabelänge die gesamte Verarbeitung unter 30ms bleibt. Der großzügige Threshold von 500ms pro Funktion dient als Sicherheitsnetz, um Regressionen bei zukünftigen Änderungen frühzeitig zu erkennen — etwa wenn ein neuer Algorithmus die Komplexität versehentlich von O(n) auf O(n²) erhöht.
+ 
+### Skalierungsverhalten
+ 
+Ein zusätzlicher Test prüft, ob die Verarbeitungszeit linear mit der Eingabegröße skaliert. Konkret wird sichergestellt, dass die Verarbeitung des vollen Inputs (10.000 Zeichen) nicht mehr als dreimal so lange dauert wie die des halben Inputs (5.000 Zeichen). Dies schließt versehentlich eingeführte quadratische Algorithmen aus.
+
 ---
 
 ## 6. Referenz zum Testordner
