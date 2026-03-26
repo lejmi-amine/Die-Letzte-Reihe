@@ -3,10 +3,13 @@
 ## 1. Vorgehensweise und Architektur
 
 ### Welches Framework wird genutzt?
-Für das Testen unseres Projekts *StudyBot* nutzen wir **Vitest**. Es handelt sich dabei um das modernste und am besten integrierte Unit-Testing-Framework für Vite-basierte JavaScript/React-Projekte.
+
+Für das Testen unseres Projekts _StudyBot_ nutzen wir **Vitest**. Es handelt sich dabei um das modernste und am besten integrierte Unit-Testing-Framework für Vite-basierte JavaScript/React-Projekte.
 
 ### Warum dieses Framework?
+
 Im Gegensatz zu externen Tools wie Jest integriert sich Vitest nahtlos in unsere bestehende Vite-Konfiguration und nutzt dieselbe Build-Pipeline.
+
 - **Native ESM-Unterstützung:** Unser Projekt verwendet `"type": "module"` — Vitest unterstützt das nativ, ohne zusätzliche Babel-Transforms.
 - **Isolierung:** Da die gesamte Logik in `src/studybot.logic.js` extrahiert wurde, laufen alle Tests ohne DOM, ohne React und ohne Browser — rein in einer Node-Umgebung.
 - **Mocking:** Das Framework bietet `vi.spyOn` für das gezielte Überschreiben von `Math.random`, um nicht-deterministische Funktionen reproduzierbar zu testen.
@@ -29,9 +32,11 @@ tests/
 Diese Trennung folgt dem **Single Responsibility Principle**: UI-Rendering und Geschäftslogik sind klar voneinander getrennt.
 
 ### Namenskonvention
+
 Damit die Tests automatisch erkannt und strukturiert bleiben, gelten folgende Konventionen:
+
 1. **Ordnerstruktur:** Sämtliche Test-Dateien befinden sich im Root-Ordner `tests/`. Die Benennung spiegelt den Pfad der originalen Logik-Datei wider.  
-   *Beispiel:* `src/studybot.logic.js` ➡️ `tests/studybot.logic.test.js`
+   _Beispiel:_ `src/studybot.logic.js` ➡️ `tests/studybot.logic.test.js`
 2. **Dateinamen:** Test-Dateien tragen immer den Originalnamen mit dem Suffix `.test.js` (z.B. `studybot.logic.test.js`).
 3. **Gruppen und Tests:** Jede Funktion hat einen eigenen `describe`-Block. Einzelne Tests beginnen mit `it(...)` und beschreiben das erwartete Verhalten in vollständigen Sätzen.
 
@@ -54,13 +59,13 @@ afterEach(() => {
 
 describe("generateQuiz", () => {
   it("places the correct answer at index 0 when Math.random is mocked to return 0", () => {
-    // Arrange: Math.random wird durch einen kontrollierten Wert ersetzt
+    // Math.random wird durch einen kontrollierten Wert ersetzt
     vi.spyOn(Math, "random").mockReturnValue(0);
 
-    // Act: Quiz wird mit dem gemockten Zufall generiert
+    // Quiz wird mit dem gemockten Zufall generiert
     const quiz = generateQuiz(MEDIUM_TEXT);
 
-    // Assert: Richtige Antwort muss bei Index 0 liegen
+    // Richtige Antwort muss bei Index 0 liegen
     quiz.forEach((q) => expect(q.correct).toBe(0));
   });
 
@@ -80,9 +85,9 @@ describe("generateQuiz", () => {
 
 ---
 
-## 3. Beispiel einer Konsolenausgabe (Testergebnisse)
+## 3. Testergebnisse
 
-Ein beispielhafter Auszug aus der Ausführung aller Tests im Terminal mit `npm test`:
+### Terminal-Output (`npm test`)
 
 ```diff
 > studybot@1.0.0 test
@@ -119,30 +124,43 @@ Ein beispielhafter Auszug aus der Ausführung aller Tests im Terminal mit `npm t
  Test Files  1 passed (1)
       Tests  121 passed (121)
    Start at  23:20:44
-   Duration  ~40ms (transform 142ms, setup 0ms, collect 124ms, tests 41ms)
+   Duration  ~40ms
 ```
 
-*(Anmerkung: Die Ausführungszeit von ~40ms zeigt, dass alle Tests vollständig ohne Browser oder externe Systeme laufen. Die Logik-Extraktion in `studybot.logic.js` ist die Voraussetzung für diese Geschwindigkeit.)*
+_(Anmerkung: Die Ausführungszeit von ~40ms zeigt, dass alle Tests vollständig ohne Browser oder externe Systeme laufen.)_
 
----
+### Coverage-Report (`npm run test:coverage`)
+
+![Coverage Report](/StudyBot/coverage-screenshot.png)
+
+| Metrik     | Ergebnis       |
+| ---------- | -------------- |
+| Statements | 100% (168/168) |
+| Functions  | 100% (8/8)     |
+| Lines      | 100% (168/168) |
+| Branches   | 83.33% (45/54) |
 
 ## 4. Test-Design Prinzipien
 
 ### Isolation
+
 Jede Funktion wird isoliert getestet. Kein Test ist auf den Zustand eines anderen Tests angewiesen. `afterEach(() => vi.restoreAllMocks())` stellt sicher, dass Mocks nicht in nachfolgende Tests durchsickern.
 
 ### Boundary Testing
+
 Grenzwerte werden explizit getestet, um Regressionen bei Änderungen an Limits sofort zu erkennen:
 
-| Grenzwert | Getestete Werte |
-|-----------|----------------|
-| Minimale Textlänge (30 Zeichen) | 29, 30, 31 Zeichen |
-| Maximale Textlänge (MAX_CHARS) | MAX_CHARS - 1, MAX_CHARS, MAX_CHARS + 1 |
-| Kartenlimit | Genau 6, mehr als 6 (Long Text) |
-| Quiz-Fragelimit | Genau 5, mehr als 5 (Long Text) |
+| Grenzwert                       | Getestete Werte                         |
+| ------------------------------- | --------------------------------------- |
+| Minimale Textlänge (30 Zeichen) | 29, 30, 31 Zeichen                      |
+| Maximale Textlänge (MAX_CHARS)  | MAX_CHARS - 1, MAX_CHARS, MAX_CHARS + 1 |
+| Kartenlimit                     | Genau 6, mehr als 6 (Long Text)         |
+| Quiz-Fragelimit                 | Genau 5, mehr als 5 (Long Text)         |
 
 ### Executable Documentation
+
 Testnamen beschreiben das exakte Verhalten ohne Blick in den Quellcode:
+
 ```
 "returns valid:false for input exactly 29 characters long (one below boundary)"
 "places the correct answer at index 0 when Math.random is mocked to return 0"
@@ -151,6 +169,7 @@ Testnamen beschreiben das exakte Verhalten ohne Blick in den Quellcode:
 ```
 
 ### Regression Safety
+
 Jede Änderung an einer Kernfunktion schlägt sofort mindestens einen Test an. Wird das Kartenlimit von 6 auf 5 geändert, schlagen z.B. die Tests `"generates at most 6 cards"` und der zugehörige Integrationstest sofort an.
 
 ---
@@ -163,11 +182,11 @@ npm run test:coverage
 
 Konfigurierte Mindest-Schwellenwerte in `vite.config.js`:
 
-| Metrik | Schwellenwert |
-|--------|--------------|
-| Lines | ≥ 90 % |
-| Functions | 100 % |
-| Branches | ≥ 80 % |
+| Metrik    | Schwellenwert |
+| --------- | ------------- |
+| Lines     | ≥ 90 %        |
+| Functions | 100 %         |
+| Branches  | ≥ 80 %        |
 
 Der HTML-Report wird unter `coverage/index.html` gespeichert und kann direkt im Browser geöffnet werden.
 
@@ -183,19 +202,19 @@ Ein detaillierter Überblick über die Test-Struktur:
 
 - **`tests/studybot.logic.test.js`** — Enthält alle 121 Unit Tests für die Kernlogik. Aufgeteilt in 10 `describe`-Blöcke:
 
-| Gruppe | Tests | Beschreibung |
-|--------|-------|-------------|
-| `extractSentences` | 14 | Zerlegt Text in Sätze, filtert kurze Sätze heraus |
-| `extractKeyTerms` | 14 | Extrahiert Schlüsselbegriffe, entfernt Stopwords (DE + EN) |
-| `findSentencesWith` | 10 | Case-insensitive Satzsuche nach Begriff |
-| `generateFlashcards` | 16 | Erstellt bis zu 6 Karteikarten mit Frage/Antwort |
-| `generateSummary` | 15 | Erstellt strukturierte 4-Abschnitt-Zusammenfassung |
-| `generateQuiz` | 16 | Erstellt bis zu 5 Multiple-Choice-Fragen mit 4 Optionen |
-| `validateInput` | 13 | Validiert Nutzereingabe auf Länge und Inhalt |
-| `truncateToMaxChars` | 8 | Kürzt Text sicher auf MAX_CHARS |
-| `MAX_CHARS` | 3 | Konstante: 10.000 Zeichen |
-| Integration Pipeline | 12 | Zusammenspiel aller Generatoren Ende-zu-Ende |
-| **Gesamt** | **121** | |
+| Gruppe               | Tests   | Beschreibung                                               |
+| -------------------- | ------- | ---------------------------------------------------------- |
+| `extractSentences`   | 14      | Zerlegt Text in Sätze, filtert kurze Sätze heraus          |
+| `extractKeyTerms`    | 14      | Extrahiert Schlüsselbegriffe, entfernt Stopwords (DE + EN) |
+| `findSentencesWith`  | 10      | Case-insensitive Satzsuche nach Begriff                    |
+| `generateFlashcards` | 16      | Erstellt bis zu 6 Karteikarten mit Frage/Antwort           |
+| `generateSummary`    | 15      | Erstellt strukturierte 4-Abschnitt-Zusammenfassung         |
+| `generateQuiz`       | 16      | Erstellt bis zu 5 Multiple-Choice-Fragen mit 4 Optionen    |
+| `validateInput`      | 13      | Validiert Nutzereingabe auf Länge und Inhalt               |
+| `truncateToMaxChars` | 8       | Kürzt Text sicher auf MAX_CHARS                            |
+| `MAX_CHARS`          | 3       | Konstante: 10.000 Zeichen                                  |
+| Integration Pipeline | 12      | Zusammenspiel aller Generatoren Ende-zu-Ende               |
+| **Gesamt**           | **121** |                                                            |
 
 - **`src/studybot.logic.js`** — Die extrahierte, reine Logik-Schicht ohne React-Abhängigkeiten. Dies ist das einzige Test-Target. Alle Funktionen sind als named exports verfügbar und können direkt importiert werden.
 
@@ -203,11 +222,11 @@ Ein detaillierter Überblick über die Test-Struktur:
 
 ## 7. Bekannte Edge Cases (dokumentiert in Tests)
 
-| Edge Case | Verhalten | Dokumentiert in |
-|-----------|-----------|-----------------|
-| `"Kurz."` als Quiz-Input | Produziert 1 Frage, da `"kurz"` (4 Zeichen) den `> 3` Filter besteht | `generateQuiz — returns [] for input with no terms > 3 chars` |
-| `Math.random = 0` | Richtige Antwort immer bei Index 0 | `generateQuiz — places correct answer at index 0` |
-| `Math.random = 0.99` | Richtige Antwort immer bei Index 3 | `generateQuiz — places correct answer at index 3` |
-| Text mit nur Stopwords | `extractKeyTerms` gibt `[]` zurück | `extractKeyTerms — returns [] when text contains only stopwords` |
-| Leerstring in allen Generatoren | Kein Absturz, leere bzw. Default-Ausgabe | Integration: `handles an empty string across all generators` |
-| Text ≤ 3 Sätze in Summary | Default-Schlusssatz wird verwendet | `generateSummary — uses default closing sentence` |
+| Edge Case                       | Verhalten                                                            | Dokumentiert in                                                  |
+| ------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `"Kurz."` als Quiz-Input        | Produziert 1 Frage, da `"kurz"` (4 Zeichen) den `> 3` Filter besteht | `generateQuiz — returns [] for input with no terms > 3 chars`    |
+| `Math.random = 0`               | Richtige Antwort immer bei Index 0                                   | `generateQuiz — places correct answer at index 0`                |
+| `Math.random = 0.99`            | Richtige Antwort immer bei Index 3                                   | `generateQuiz — places correct answer at index 3`                |
+| Text mit nur Stopwords          | `extractKeyTerms` gibt `[]` zurück                                   | `extractKeyTerms — returns [] when text contains only stopwords` |
+| Leerstring in allen Generatoren | Kein Absturz, leere bzw. Default-Ausgabe                             | Integration: `handles an empty string across all generators`     |
+| Text ≤ 3 Sätze in Summary       | Default-Schlusssatz wird verwendet                                   | `generateSummary — uses default closing sentence`                |
