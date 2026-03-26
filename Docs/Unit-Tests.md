@@ -182,6 +182,23 @@ Testnamen beschreiben das exakte Verhalten ohne Blick in den Quellcode:
 
 Jede Änderung an einer Kernfunktion schlägt sofort mindestens einen Test an. Wird das Kartenlimit von 6 auf 5 geändert, schlagen z.B. die Tests `"generates at most 6 cards"` und der zugehörige Integrationstest sofort an.
 
+
+### Defensive Programmierung
+ 
+Ein oft unterschätzter Aspekt von Unit Tests ist die Absicherung gegen ungültige Eingaben. In einer realen Anwendung kann der Benutzer theoretisch beliebigen Input liefern — sei es ein leerer String, ein Text bestehend nur aus Sonderzeichen, oder Input in einer unerwarteten Sprache.
+ 
+Unsere Tests decken folgende Szenarien explizit ab:
+ 
+| Eingabetyp | Erwartetes Verhalten | Begründung |
+|---|---|---|
+| Leerer String `""` | Leere Arrays / Default-Zusammenfassung | Kein Absturz bei versehentlichem Klick |
+| Whitespace-only `"   \n  "` | Wird wie leerer Input behandelt | Benutzer drückt versehentlich nur Enter |
+| Nur Stoppwörter | Keine Schlüsselbegriffe extrahiert | Text ohne Informationsgehalt |
+| Nur Satzzeichen `"... !!! ???"` | Keine Sätze extrahiert | Kein sinnvoller Inhalt vorhanden |
+| Extrem langer einzelner Satz | Wird korrekt als ein Satz erkannt | Kein Buffer-Overflow oder Endlosschleife |
+| Gemischte Sprache (DE + EN) | Stoppwörter beider Sprachen gefiltert | Vorlesungen enthalten oft englische Fachbegriffe |
+ 
+Das Prinzip dahinter ist einfach: **Keine Funktion darf bei gültigem oder ungültigem Input eine unbehandelte Exception werfen.** Stattdessen geben alle Funktionen im Fehlerfall einen sinnvollen Defaultwert zurück — leere Arrays für Listen, Default-Texte für Zusammenfassungen.
 ---
 
 ## 5. Coverage
