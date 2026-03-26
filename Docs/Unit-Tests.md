@@ -85,6 +85,16 @@ describe("generateQuiz", () => {
 
 ---
 
+## 2.1 Mocking-Strategie
+ 
+In unserem Projekt gibt es genau eine nicht-deterministische Abhängigkeit: `Math.random()`. Diese Funktion wird in `generateQuiz` verwendet, um die Position der richtigen Antwort innerhalb der vier Optionen zufällig zu bestimmen. Ohne Kontrolle über den Rückgabewert wären Tests, die die Position der richtigen Antwort prüfen, nicht reproduzierbar.
+ 
+Unsere Strategie folgt dem Prinzip der **minimalen Mocking-Oberfläche**: Wir mocken ausschließlich `Math.random` und nur in den Tests, die dieses Verhalten explizit prüfen. Alle anderen Tests laufen mit dem echten Zufallsgenerator, um sicherzustellen, dass die Funktionen auch unter realen Bedingungen korrekt arbeiten.
+ 
+Die Isolation wird durch `afterEach(() => vi.restoreAllMocks())` garantiert. Dadurch wird nach jedem einzelnen Testfall der Originalzustand von `Math.random` wiederhergestellt. Es kann kein Mock-State von einem Test in den nächsten durchsickern, was eine häufige Fehlerquelle in Test-Suites ist.
+ 
+Wir haben bewusst auf das Mocking von internen Funktionen wie `extractSentences` oder `extractKeyTerms` innerhalb der Generator-Tests verzichtet. Der Grund: Diese Funktionen enthalten keine Seiteneffekte und sind reine Transformationen. Sie direkt mitzutesten erhöht die Confidence, dass die gesamte Pipeline korrekt zusammenarbeitet, ohne dass wir dafür separate Integrationstests schreiben müssen.
+
 ## 3. Testergebnisse
 
 ### Terminal-Output (`npm test`)
