@@ -374,6 +374,18 @@ export default function StudyBot() {
     setDragOverIdx(null);
   }, [dragIdx]);
 
+  const shuffleCards = useCallback(() => {
+    setCards((prev) => {
+      const arr = [...prev];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    });
+    setCardIndex(0);
+  }, []);
+
   const generate = useCallback(async () => {
     if (!inputText.trim() || inputText.trim().length < 30) {
       setError("Bitte gib mindestens einen kurzen Absatz ein (mind. 30 Zeichen).");
@@ -540,15 +552,22 @@ export default function StudyBot() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
               <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>🃏 Karteikarten</h2>
-              <div style={{ display: "flex", gap: 4, background: t.bgSecondary, borderRadius: 10, padding: 3 }}>
-                {[{ id: "single", label: "Einzeln" }, { id: "grid", label: "Grid" }].map((v) => (
-                  <button key={v.id} onClick={() => setCardView(v.id)} style={{
-                    padding: "6px 14px", borderRadius: 8, border: "none",
-                    background: cardView === v.id ? t.accent : "transparent",
-                    color: cardView === v.id ? "#fff" : t.textSecondary,
-                    fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: fontStack,
-                  }}>{v.label}</button>
-                ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button onClick={shuffleCards} style={{
+                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${t.border}`,
+                  background: t.bgCard, color: t.textSecondary,
+                  fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: fontStack,
+                }}>🔀 Mischen</button>
+                <div style={{ display: "flex", gap: 4, background: t.bgSecondary, borderRadius: 10, padding: 3 }}>
+                  {[{ id: "single", label: "Einzeln" }, { id: "grid", label: "Grid" }].map((v) => (
+                    <button key={v.id} onClick={() => setCardView(v.id)} style={{
+                      padding: "6px 14px", borderRadius: 8, border: "none",
+                      background: cardView === v.id ? t.accent : "transparent",
+                      color: cardView === v.id ? "#fff" : t.textSecondary,
+                      fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: fontStack,
+                    }}>{v.label}</button>
+                  ))}
+                </div>
               </div>
             </div>
 
