@@ -340,6 +340,7 @@ export default function StudyBot() {
   const [quizRevealed, setQuizRevealed] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [error, setError] = useState("");
+  const [summaryCopied, setSummaryCopied] = useState(false);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [fileDragOver, setFileDragOver] = useState(false);
@@ -622,7 +623,14 @@ export default function StudyBot() {
         {/* ═══ SUMMARY ═══ */}
         {activeTab === "summary" && generated && (
           <div>
-            <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24, letterSpacing: -0.5 }}>📋 Zusammenfassung</h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+              <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>📋 Zusammenfassung</h2>
+              <button onClick={() => { navigator.clipboard.writeText(summary); setSummaryCopied(true); setTimeout(() => setSummaryCopied(false), 2000); }} style={{
+                padding: "6px 14px", borderRadius: 8, border: `1px solid ${summaryCopied ? t.success : t.border}`,
+                background: t.bgCard, color: summaryCopied ? t.success : t.textSecondary,
+                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: fontStack, transition: "all 0.2s",
+              }}>{summaryCopied ? "✅ Kopiert!" : "📋 Kopieren"}</button>
+            </div>
             <div style={{
               background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 16,
               padding: 28, lineHeight: 1.8, fontSize: 15, color: t.text, whiteSpace: "pre-wrap",
