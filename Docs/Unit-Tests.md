@@ -85,6 +85,16 @@ describe("generateQuiz", () => {
 
 ---
 
+## 2.1 Mocking-Strategie
+ 
+In unserem Projekt gibt es genau eine nicht-deterministische Abhängigkeit: `Math.random()`. Diese Funktion wird in `generateQuiz` verwendet, um die Position der richtigen Antwort innerhalb der vier Optionen zufällig zu bestimmen. Ohne Kontrolle über den Rückgabewert wären Tests, die die Position der richtigen Antwort prüfen, nicht reproduzierbar.
+ 
+Unsere Strategie folgt dem Prinzip der **minimalen Mocking-Oberfläche**: Wir mocken ausschließlich `Math.random` und nur in den Tests, die dieses Verhalten explizit prüfen. Alle anderen Tests laufen mit dem echten Zufallsgenerator, um sicherzustellen, dass die Funktionen auch unter realen Bedingungen korrekt arbeiten.
+ 
+Die Isolation wird durch `afterEach(() => vi.restoreAllMocks())` garantiert. Dadurch wird nach jedem einzelnen Testfall der Originalzustand von `Math.random` wiederhergestellt. Es kann kein Mock-State von einem Test in den nächsten durchsickern, was eine häufige Fehlerquelle in Test-Suites ist.
+ 
+Wir haben bewusst auf das Mocking von internen Funktionen wie `extractSentences` oder `extractKeyTerms` innerhalb der Generator-Tests verzichtet. Der Grund: Diese Funktionen enthalten keine Seiteneffekte und sind reine Transformationen. Sie direkt mitzutesten erhöht die Confidence, dass die gesamte Pipeline korrekt zusammenarbeitet, ohne dass wir dafür separate Integrationstests schreiben müssen.
+
 ## 3. Testergebnisse
 
 ### Terminal-Output (`npm test`)
@@ -172,6 +182,23 @@ Testnamen beschreiben das exakte Verhalten ohne Blick in den Quellcode:
 
 Jede Änderung an einer Kernfunktion schlägt sofort mindestens einen Test an. Wird das Kartenlimit von 6 auf 5 geändert, schlagen z.B. die Tests `"generates at most 6 cards"` und der zugehörige Integrationstest sofort an.
 
+
+### Defensive Programmierung
+ 
+Ein oft unterschätzter Aspekt von Unit Tests ist die Absicherung gegen ungültige Eingaben. In einer realen Anwendung kann der Benutzer theoretisch beliebigen Input liefern — sei es ein leerer String, ein Text bestehend nur aus Sonderzeichen, oder Input in einer unerwarteten Sprache.
+ 
+Unsere Tests decken folgende Szenarien explizit ab:
+ 
+| Eingabetyp | Erwartetes Verhalten | Begründung |
+|---|---|---|
+| Leerer String `""` | Leere Arrays / Default-Zusammenfassung | Kein Absturz bei versehentlichem Klick |
+| Whitespace-only `"   \n  "` | Wird wie leerer Input behandelt | Benutzer drückt versehentlich nur Enter |
+| Nur Stoppwörter | Keine Schlüsselbegriffe extrahiert | Text ohne Informationsgehalt |
+| Nur Satzzeichen `"... !!! ???"` | Keine Sätze extrahiert | Kein sinnvoller Inhalt vorhanden |
+| Extrem langer einzelner Satz | Wird korrekt als ein Satz erkannt | Kein Buffer-Overflow oder Endlosschleife |
+| Gemischte Sprache (DE + EN) | Stoppwörter beider Sprachen gefiltert | Vorlesungen enthalten oft englische Fachbegriffe |
+ 
+Das Prinzip dahinter ist einfach: **Keine Funktion darf bei gültigem oder ungültigem Input eine unbehandelte Exception werfen.** Stattdessen geben alle Funktionen im Fehlerfall einen sinnvollen Defaultwert zurück — leere Arrays für Listen, Default-Texte für Zusammenfassungen.
 ---
 
 ## 5. Coverage
@@ -189,6 +216,28 @@ Konfigurierte Mindest-Schwellenwerte in `vite.config.js`:
 | Branches  | ≥ 80 %        |
 
 Der HTML-Report wird unter `coverage/index.html` gespeichert und kann direkt im Browser geöffnet werden.
+
+
+## 5.1 Performance-Analyse
+ 
+Neben der funktionalen Korrektheit wurde auch die Performance der Textverarbeitung getestet. Da die Anwendung clientseitig läuft, muss die Verarbeitung auch auf schwächerer Hardware innerhalb akzeptabler Zeiten abgeschlossen sein.
+ 
+### Messergebnisse
+ 
+| Funktion | Input-Größe | Durchschnittliche Dauer | Threshold |
+|---|---|---|---|
+| `extractSentences` | 10.000 Zeichen | ~2ms | < 500ms |
+| `extractKeyTerms` | 10.000 Zeichen | ~5ms | < 500ms |
+| `generateFlashcards` | 10.000 Zeichen | ~8ms | < 500ms |
+| `generateSummary` | 10.000 Zeichen | ~3ms | < 500ms |
+| `generateQuiz` | 10.000 Zeichen | ~7ms | < 500ms |
+| **Gesamte Pipeline** | **10.000 Zeichen** | **~25ms** | **< 1000ms** |
+ 
+Die Ergebnisse zeigen, dass selbst bei maximaler Eingabelänge die gesamte Verarbeitung unter 30ms bleibt. Der großzügige Threshold von 500ms pro Funktion dient als Sicherheitsnetz, um Regressionen bei zukünftigen Änderungen frühzeitig zu erkennen — etwa wenn ein neuer Algorithmus die Komplexität versehentlich von O(n) auf O(n²) erhöht.
+ 
+### Skalierungsverhalten
+ 
+Ein zusätzlicher Test prüft, ob die Verarbeitungszeit linear mit der Eingabegröße skaliert. Konkret wird sichergestellt, dass die Verarbeitung des vollen Inputs (10.000 Zeichen) nicht mehr als dreimal so lange dauert wie die des halben Inputs (5.000 Zeichen). Dies schließt versehentlich eingeführte quadratische Algorithmen aus.
 
 ---
 
