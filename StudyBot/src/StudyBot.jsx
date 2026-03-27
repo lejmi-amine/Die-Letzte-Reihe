@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 // ─── Theme & Constants ───────────────────────────────────────────────
 const MAX_CHARS = 10000;
@@ -198,8 +198,7 @@ function generateQuiz(text) {
 }
 
 // ─── Flashcard Component ─────────────────────────────────────────────
-function FlashcardComp({ card, index, total, theme, onDragStart, onDragOver, onDrop, isDragOver }) {
-  const [flipped, setFlipped] = useState(false);
+function FlashcardComp({ card, index, total, theme, onDragStart, onDragOver, onDrop, isDragOver, flipped, onFlip }) {
   const t = THEMES[theme];
   return (
     <div
@@ -207,7 +206,7 @@ function FlashcardComp({ card, index, total, theme, onDragStart, onDragOver, onD
       onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; onDragStart(index); }}
       onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; onDragOver(index); }}
       onDrop={(e) => { e.preventDefault(); onDrop(index); }}
-      onClick={() => setFlipped(!flipped)}
+      onClick={onFlip}
       style={{
         perspective: "1000px", cursor: "grab", width: "100%", maxWidth: 520, height: 260,
         margin: "0 auto", transition: "transform 0.2s, opacity 0.2s",
@@ -342,12 +341,24 @@ export default function StudyBot() {
   const [error, setError] = useState("");
   const [summaryCopied, setSummaryCopied] = useState(false);
   const [cardCount, setCardCount] = useState(6);
+  const [flippedCard, setFlippedCard] = useState(false);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [fileDragOver, setFileDragOver] = useState(false);
 
   const t = THEMES[theme];
   const fontStack = "'Outfit', 'DM Sans', system-ui, sans-serif";
+
+  useEffect(() => {
+    if (activeTab !== "cards" || cardView !== "single" || cards.length === 0) return;
+    const handleKey = (e) => {
+      if (e.code === "ArrowRight") { setCardIndex((i) => Math.min(cards.length - 1, i + 1)); setFlippedCard(false); }
+      else if (e.code === "ArrowLeft") { setCardIndex((i) => Math.max(0, i - 1)); setFlippedCard(false); }
+      else if (e.code === "Space") { e.preventDefault(); setFlippedCard((f) => !f); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeTab, cardView, cards.length]);
 
   const handleFileDrop = useCallback((e) => {
     e.preventDefault();
@@ -589,14 +600,15 @@ export default function StudyBot() {
               <>
                 <FlashcardComp card={cards[cardIndex]} index={cardIndex} total={cards.length} theme={theme}
                   onDragStart={setDragIdx} onDragOver={setDragOverIdx} onDrop={handleCardDrop}
-                  isDragOver={dragOverIdx === cardIndex} />
+                  isDragOver={dragOverIdx === cardIndex}
+                  flipped={flippedCard} onFlip={() => setFlippedCard((f) => !f)} />
                 <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 24 }}>
-                  <button onClick={() => setCardIndex(Math.max(0, cardIndex - 1))} disabled={cardIndex === 0} style={{
+                  <button onClick={() => { setCardIndex(Math.max(0, cardIndex - 1)); setFlippedCard(false); }} disabled={cardIndex === 0} style={{
                     padding: "10px 24px", borderRadius: 10, border: `1px solid ${t.border}`,
                     background: t.bgCard, color: cardIndex === 0 ? t.textMuted : t.text,
                     cursor: cardIndex === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 500, fontFamily: fontStack,
                   }}>← Zurück</button>
-                  <button onClick={() => setCardIndex(Math.min(cards.length - 1, cardIndex + 1))} disabled={cardIndex === cards.length - 1} style={{
+                  <button onClick={() => { setCardIndex(Math.min(cards.length - 1, cardIndex + 1)); setFlippedCard(false); }} disabled={cardIndex === cards.length - 1} style={{
                     padding: "10px 24px", borderRadius: 10, border: "none",
                     background: cardIndex === cards.length - 1 ? t.textMuted : t.accent,
                     color: "#fff", cursor: cardIndex === cards.length - 1 ? "not-allowed" : "pointer",
@@ -627,7 +639,7 @@ export default function StudyBot() {
 
             {cards.length > 1 && (
               <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: t.textMuted }}>
-                💡 Karten per Drag & Drop umsortieren{cardView === "grid" ? " • Klicken zum Öffnen" : ""}
+                💡 Karten per Drag & Drop umsortieren{cardView === "grid" ? " • Klicken zum Öffnen" : " • ← → navigieren • Leertaste umdrehen"}
               </p>
             )}
           </div>
