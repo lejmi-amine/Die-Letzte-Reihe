@@ -71,14 +71,14 @@ function findSentencesWith(sentences, term) {
   return sentences.filter((s) => s.toLowerCase().includes(term.toLowerCase()));
 }
 
-function generateFlashcards(text) {
+function generateFlashcards(text, count = 6) {
   const sentences = extractSentences(text);
   const terms = extractKeyTerms(text);
   const cards = [];
   const usedSentences = new Set();
 
   for (const term of terms) {
-    if (cards.length >= 6) break;
+    if (cards.length >= count) break;
     const matches = findSentencesWith(sentences, term);
     for (const match of matches) {
       if (usedSentences.has(match)) continue;
@@ -103,7 +103,7 @@ function generateFlashcards(text) {
   }
 
   // Fill up if we have less than 6
-  while (cards.length < 6 && cards.length < sentences.length) {
+  while (cards.length < count && cards.length < sentences.length) {
     const s = sentences[cards.length * 2] || sentences[cards.length];
     if (s && !usedSentences.has(s)) {
       usedSentences.add(s);
@@ -341,6 +341,7 @@ export default function StudyBot() {
   const [generated, setGenerated] = useState(false);
   const [error, setError] = useState("");
   const [summaryCopied, setSummaryCopied] = useState(false);
+  const [cardCount, setCardCount] = useState(6);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [fileDragOver, setFileDragOver] = useState(false);
@@ -401,7 +402,7 @@ export default function StudyBot() {
 
       setLoadingMsg("Karteikarten werden erstellt...");
       await new Promise((r) => setTimeout(r, 500));
-      setCards(generateFlashcards(inputText));
+      setCards(generateFlashcards(inputText, cardCount));
 
       setLoadingMsg("Zusammenfassung wird erstellt...");
       await new Promise((r) => setTimeout(r, 400));
@@ -415,7 +416,7 @@ export default function StudyBot() {
     } catch (e) {
       setError("Fehler bei der Verarbeitung: " + e.message);
     } finally { setLoading(false); setLoadingMsg(""); }
-  }, [inputText]);
+  }, [inputText, cardCount]);
 
   const quizScore = quizRevealed && quiz.length > 0
     ? quiz.filter((q, i) => quizAnswers[i] === q.correct).length : null;
@@ -530,7 +531,19 @@ export default function StudyBot() {
               </span>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16 }}>
+              <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500 }}>Karteikarten:</span>
+              {[6, 9, 12, 15].map((n) => (
+                <button key={n} onClick={() => setCardCount(n)} style={{
+                  padding: "4px 12px", borderRadius: 8, border: `1px solid ${cardCount === n ? t.accent : t.border}`,
+                  background: cardCount === n ? t.accentDim : t.bgCard,
+                  color: cardCount === n ? t.accent : t.textSecondary,
+                  fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: fontStack, transition: "all 0.2s",
+                }}>{n}</button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
               <span style={{ fontSize: 12, color: t.textMuted }}>{inputText.trim().split(/\s+/).filter(Boolean).length} Wörter</span>
               <button onClick={generate} disabled={loading} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
