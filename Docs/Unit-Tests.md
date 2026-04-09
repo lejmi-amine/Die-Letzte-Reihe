@@ -87,9 +87,12 @@ describe("generateQuiz", () => {
 
 ## 2.1 Mocking-Strategie
  
-In unserem Projekt gibt es genau eine nicht-deterministische Abhängigkeit: `Math.random()`. Diese Funktion wird in `generateQuiz` verwendet, um die Position der richtigen Antwort innerhalb der vier Optionen zufällig zu bestimmen. Ohne Kontrolle über den Rückgabewert wären Tests, die die Position der richtigen Antwort prüfen, nicht reproduzierbar.
- 
-Unsere Strategie folgt dem Prinzip der **minimalen Mocking-Oberfläche**: Wir mocken ausschließlich `Math.random` und nur in den Tests, die dieses Verhalten explizit prüfen. Alle anderen Tests laufen mit dem echten Zufallsgenerator, um sicherzustellen, dass die Funktionen auch unter realen Bedingungen korrekt arbeiten.
+In unserem Projekt gibt es zwei externe Abhängigkeiten, die in Tests gemockt werden:
+
+1. **`Math.random()`** — wird in `generateQuiz` verwendet, um die Position der richtigen Antwort zufällig zu bestimmen.
+2. **`@xenova/transformers`** — das KI-Modell für `generateSummary` wird mit `vi.mock` durch eine synchrone Stub-Funktion ersetzt, damit kein Modell-Download im Test-Runner stattfindet.
+
+Unsere Strategie folgt dem Prinzip der **minimalen Mocking-Oberfläche**: Wir mocken ausschließlich externe Abhängigkeiten und nur dort, wo es nötig ist. Alle anderen Tests laufen mit echter Logik, um sicherzustellen, dass die Funktionen auch unter realen Bedingungen korrekt arbeiten.
  
 Die Isolation wird durch `afterEach(() => vi.restoreAllMocks())` garantiert. Dadurch wird nach jedem einzelnen Testfall der Originalzustand von `Math.random` wiederhergestellt. Es kann kein Mock-State von einem Test in den nächsten durchsickern, was eine häufige Fehlerquelle in Test-Suites ist.
  
@@ -229,7 +232,7 @@ Neben der funktionalen Korrektheit wurde auch die Performance der Textverarbeitu
 | `extractSentences` | 10.000 Zeichen | ~2ms | < 500ms |
 | `extractKeyTerms` | 10.000 Zeichen | ~5ms | < 500ms |
 | `generateFlashcards` | 10.000 Zeichen | ~8ms | < 500ms |
-| `generateSummary` | 10.000 Zeichen | ~3ms | < 500ms |
+| `generateSummary` | 10.000 Zeichen | ~2–10s (KI, gecacht) | erster Lauf |
 | `generateQuiz` | 10.000 Zeichen | ~7ms | < 500ms |
 | **Gesamte Pipeline** | **10.000 Zeichen** | **~25ms** | **< 1000ms** |
  
@@ -257,7 +260,7 @@ Ein detaillierter Überblick über die Test-Struktur:
 | `extractKeyTerms`    | 14      | Extrahiert Schlüsselbegriffe, entfernt Stopwords (DE + EN) |
 | `findSentencesWith`  | 10      | Case-insensitive Satzsuche nach Begriff                    |
 | `generateFlashcards` | 16      | Erstellt bis zu 6 Karteikarten mit Frage/Antwort           |
-| `generateSummary`    | 15      | Erstellt strukturierte 4-Abschnitt-Zusammenfassung         |
+| `generateSummary`    | 8       | Erstellt KI-generierte Zusammenfassung (3 Abschnitte)      |
 | `generateQuiz`       | 16      | Erstellt bis zu 5 Multiple-Choice-Fragen mit 4 Optionen    |
 | `validateInput`      | 13      | Validiert Nutzereingabe auf Länge und Inhalt               |
 | `truncateToMaxChars` | 8       | Kürzt Text sicher auf MAX_CHARS                            |

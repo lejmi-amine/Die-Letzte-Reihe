@@ -117,31 +117,25 @@ function generateFlashcards(text, count = 6) {
   return cards;
 }
 
-function generateSummary(text) {
+let _summarizer = null;
+
+async function generateSummary(text) {
+  const { pipeline } = await import("@xenova/transformers");
+  if (!_summarizer) {
+    _summarizer = await pipeline("summarization", "Xenova/distilbart-cnn-6-6");
+  }
+
   const sentences = extractSentences(text);
   const terms = extractKeyTerms(text);
   const topTerms = terms.slice(0, 5).map((t) => t.charAt(0).toUpperCase() + t.slice(1));
-
-  const intro = sentences.length > 0
-    ? sentences[0]
-    : "Der Text behandelt verschiedene Aspekte eines komplexen Themas.";
-
-  const keyPoints = [];
-  const used = new Set([0]);
-  for (let i = 1; i < sentences.length && keyPoints.length < 5; i++) {
-    if (sentences[i].length > 30) {
-      keyPoints.push(sentences[i]);
-      used.add(i);
-    }
-  }
-
   const closing = sentences.length > 3
     ? sentences[sentences.length - 1]
     : "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
 
-  let summary = `Überblick\n\n${intro}\n\n`;
-  summary += `Kernpunkte\n\n`;
-  keyPoints.forEach((p) => { summary += `${p}\n\n`; });
+  const input = text.slice(0, 1000);
+  const [result] = await _summarizer(input, { max_new_tokens: 130, min_new_tokens: 30 });
+
+  let summary = `Überblick\n\n${result.summary_text}\n\n`;
   summary += `Schlüsselbegriffe\n\n`;
   summary += `Die wichtigsten Begriffe sind: ${topTerms.join(", ")}.\n\n`;
   summary += `Fazit\n\n${closing}`;
@@ -415,9 +409,8 @@ export default function StudyBot() {
       await new Promise((r) => setTimeout(r, 500));
       setCards(generateFlashcards(inputText, cardCount));
 
-      setLoadingMsg("Zusammenfassung wird erstellt...");
-      await new Promise((r) => setTimeout(r, 400));
-      setSummary(generateSummary(inputText));
+      setLoadingMsg(_summarizer ? "Zusammenfassung wird erstellt..." : "KI-Modell wird geladen (einmalig ~80MB)...");
+      setSummary(await generateSummary(inputText));
 
       setLoadingMsg("Quiz wird generiert...");
       await new Promise((r) => setTimeout(r, 400));
