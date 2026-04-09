@@ -8,12 +8,6 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-vi.mock("@xenova/transformers", () => {
-  const mockOutput = [{ summary_text: "Photosynthese ist ein wichtiger biologischer Prozess in Pflanzen." }];
-  const mockSummarizer = async () => mockOutput;
-  return { pipeline: async () => mockSummarizer };
-});
 import {
   extractSentences,
   extractKeyTerms,
@@ -260,43 +254,53 @@ describe("generateFlashcards", () => {
 // =============================================================================
 
 describe("generateSummary", () => {
-  it("returns a string", async () => {
-    expect(typeof await generateSummary(MEDIUM_TEXT)).toBe("string");
+  it("returns a string", () => {
+    expect(typeof generateSummary(MEDIUM_TEXT)).toBe("string");
   });
 
-  it("contains the section header 'Überblick'", async () => {
-    expect(await generateSummary(MEDIUM_TEXT)).toContain("Überblick");
+  it("contains the section header 'Überblick'", () => {
+    expect(generateSummary(MEDIUM_TEXT)).toContain("Überblick");
   });
 
-  it("contains the section header 'Schlüsselbegriffe'", async () => {
-    expect(await generateSummary(MEDIUM_TEXT)).toContain("Schlüsselbegriffe");
+  it("contains the section header 'Kernpunkte'", () => {
+    expect(generateSummary(MEDIUM_TEXT)).toContain("Kernpunkte");
   });
 
-  it("contains the section header 'Fazit'", async () => {
-    expect(await generateSummary(MEDIUM_TEXT)).toContain("Fazit");
+  it("contains the section header 'Schlüsselbegriffe'", () => {
+    expect(generateSummary(MEDIUM_TEXT)).toContain("Schlüsselbegriffe");
   });
 
-  it("lists the top key terms in the Schlüsselbegriffe section", async () => {
-    const summary = await generateSummary(MEDIUM_TEXT);
+  it("contains the section header 'Fazit'", () => {
+    expect(generateSummary(MEDIUM_TEXT)).toContain("Fazit");
+  });
+
+  it("lists the top key terms in the Schlüsselbegriffe section", () => {
+    const summary = generateSummary(MEDIUM_TEXT);
+    // 'photosynthese' is the most frequent meaningful term in MEDIUM_TEXT
     expect(summary.toLowerCase()).toContain("photosynthese");
   });
 
-  it("uses a default closing sentence when the text has 3 or fewer sentences", async () => {
+  it("uses a default intro sentence when the input text yields no extractable sentences", () => {
+    const summary = generateSummary("Kurz.");
+    expect(summary).toContain("Der Text behandelt verschiedene Aspekte eines komplexen Themas.");
+  });
+
+  it("uses a default closing sentence when the text has 3 or fewer sentences", () => {
     const twoSentenceText =
       "Photosynthese ist wichtig für das Leben auf der Erde. " +
       "Chlorophyll ermöglicht die Lichtabsorption in Pflanzen.";
-    const summary = await generateSummary(twoSentenceText);
+    const summary = generateSummary(twoSentenceText);
     expect(summary).toContain("Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.");
   });
 
-  it("uses the last sentence of the text as the Fazit when there are more than 3 sentences", async () => {
+  it("uses the last sentence of the text as the Fazit when there are more than 3 sentences", () => {
     const sentences = extractSentences(MEDIUM_TEXT);
     const lastSentence = sentences[sentences.length - 1];
-    expect(await generateSummary(MEDIUM_TEXT)).toContain(lastSentence);
+    expect(generateSummary(MEDIUM_TEXT)).toContain(lastSentence);
   });
 
-  it("is idempotent — same input always produces the same summary", async () => {
-    expect(await generateSummary(MEDIUM_TEXT)).toBe(await generateSummary(MEDIUM_TEXT));
+  it("is idempotent — same input always produces the same summary", () => {
+    expect(generateSummary(MEDIUM_TEXT)).toBe(generateSummary(MEDIUM_TEXT));
   });
 });
 
@@ -466,50 +470,56 @@ describe("MAX_CHARS", () => {
 // =============================================================================
 
 describe("Full generation pipeline (integration)", () => {
-  it("produces cards, a summary and a quiz from the same input text without throwing", async () => {
-    const cards = generateFlashcards(MEDIUM_TEXT);
-    const summary = await generateSummary(MEDIUM_TEXT);
-    const quiz = generateQuiz(MEDIUM_TEXT);
-    expect(cards.length).toBeGreaterThan(0);
-    expect(summary.length).toBeGreaterThan(0);
-    expect(quiz.length).toBeGreaterThan(0);
+  it("produces cards, a summary and a quiz from the same input text without throwing", () => {
+    expect(() => {
+      const cards = generateFlashcards(MEDIUM_TEXT);
+      const summary = generateSummary(MEDIUM_TEXT);
+      const quiz = generateQuiz(MEDIUM_TEXT);
+      expect(cards.length).toBeGreaterThan(0);
+      expect(summary.length).toBeGreaterThan(0);
+      expect(quiz.length).toBeGreaterThan(0);
+    }).not.toThrow();
   });
 
-  it("all three generators share the same key terms — terms in cards also appear in summary", async () => {
+  it("all three generators share the same key terms — terms in cards also appear in summary", () => {
     const terms = extractKeyTerms(MEDIUM_TEXT);
-    const summary = await generateSummary(MEDIUM_TEXT);
+    const summary = generateSummary(MEDIUM_TEXT);
     // At least one of the top 5 terms should appear in the summary
     const topFive = terms.slice(0, 5);
     const anyTermInSummary = topFive.some((t) => summary.toLowerCase().includes(t));
     expect(anyTermInSummary).toBe(true);
   });
 
-  it("running the full pipeline twice on the same text produces identical results", async () => {
+  it("running the full pipeline twice on the same text produces identical results", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const first = {
       cards: generateFlashcards(MEDIUM_TEXT),
-      summary: await generateSummary(MEDIUM_TEXT),
+      summary: generateSummary(MEDIUM_TEXT),
       quiz: generateQuiz(MEDIUM_TEXT),
     };
     const second = {
       cards: generateFlashcards(MEDIUM_TEXT),
-      summary: await generateSummary(MEDIUM_TEXT),
+      summary: generateSummary(MEDIUM_TEXT),
       quiz: generateQuiz(MEDIUM_TEXT),
     };
     expect(first).toEqual(second);
     vi.restoreAllMocks();
   });
 
-  it("handles a very long text (4x MEDIUM_TEXT) without throwing", async () => {
-    generateFlashcards(LONG_TEXT);
-    await generateSummary(LONG_TEXT);
-    generateQuiz(LONG_TEXT);
+  it("handles a very long text (4x MEDIUM_TEXT) without throwing", () => {
+    expect(() => {
+      generateFlashcards(LONG_TEXT);
+      generateSummary(LONG_TEXT);
+      generateQuiz(LONG_TEXT);
+    }).not.toThrow();
   });
 
-  it("handles a text that is just at the minimum valid length without throwing", async () => {
+  it("handles a text that is just at the minimum valid length without throwing", () => {
     const minimalText = "Dies ist ein Text der genau dreißig Zeichen hat.";
-    generateFlashcards(minimalText);
-    await generateSummary(minimalText);
-    generateQuiz(minimalText);
+    expect(() => {
+      generateFlashcards(minimalText);
+      generateSummary(minimalText);
+      generateQuiz(minimalText);
+    }).not.toThrow();
   });
 });

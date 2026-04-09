@@ -2,16 +2,6 @@
 // Pure business logic extracted from StudyBot.jsx.
 // No React imports — fully testable in a Node environment.
 
-import { pipeline } from "@xenova/transformers";
-
-let _summarizer = null;
-async function getSummarizer() {
-  if (!_summarizer) {
-    _summarizer = await pipeline("summarization", "Xenova/distilbart-cnn-6-6");
-  }
-  return _summarizer;
-}
-
 export const MAX_CHARS = 10000;
 
 // ─── Text Analysis ───────────────────────────────────────────────────
@@ -110,20 +100,31 @@ export function generateFlashcards(text) {
   return cards;
 }
 
-export async function generateSummary(text) {
-  const summarizer = await getSummarizer();
-
+export function generateSummary(text) {
   const sentences = extractSentences(text);
   const terms = extractKeyTerms(text);
   const topTerms = terms.slice(0, 5).map((t) => t.charAt(0).toUpperCase() + t.slice(1));
+
+  const intro = sentences.length > 0
+    ? sentences[0]
+    : "Der Text behandelt verschiedene Aspekte eines komplexen Themas.";
+
+  const keyPoints = [];
+  const used = new Set([0]);
+  for (let i = 1; i < sentences.length && keyPoints.length < 5; i++) {
+    if (sentences[i].length > 30) {
+      keyPoints.push(sentences[i]);
+      used.add(i);
+    }
+  }
+
   const closing = sentences.length > 3
     ? sentences[sentences.length - 1]
     : "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
 
-  const input = text.slice(0, 1000);
-  const [result] = await summarizer(input, { max_new_tokens: 130, min_new_tokens: 30 });
-
-  let summary = `Überblick\n\n${result.summary_text}\n\n`;
+  let summary = `Überblick\n\n${intro}\n\n`;
+  summary += `Kernpunkte\n\n`;
+  keyPoints.forEach((p) => { summary += `${p}\n\n`; });
   summary += `Schlüsselbegriffe\n\n`;
   summary += `Die wichtigsten Begriffe sind: ${topTerms.join(", ")}.\n\n`;
   summary += `Fazit\n\n${closing}`;

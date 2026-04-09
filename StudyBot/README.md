@@ -17,7 +17,7 @@ AI-gestütztes Lern-Tool das aus Vorlesungstexten automatisch Karteikarten, Zusa
 
 - **React 18** — UI Framework mit Hooks (useState, useCallback)
 - **Vite** — Build Tool & Dev Server
-- **Transformers.js** — Lokale KI-Zusammenfassung im Browser (kein API-Key, kein Server)
+- **Claude API** — AI-Text-Generierung (Anthropic)
 - **CSS-in-JS** — Inline Styles mit Theme-System
 
 ## Setup & Start
@@ -50,9 +50,8 @@ studybot/
 ├── vite.config.js      # Vite Konfiguration
 ├── README.md
 └── src/
-    ├── main.jsx             # React Entry Point
-    ├── StudyBot.jsx         # Hauptkomponente (UI)
-    └── studybot.logic.js    # Reine Logik (testbar ohne React)
+    ├── main.jsx        # React Entry Point
+    └── StudyBot.jsx    # Hauptkomponente
 ```
 
 ## Architektur
