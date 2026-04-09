@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // ─── Theme & Constants ───────────────────────────────────────────────
 const MAX_CHARS = 10000;
@@ -349,6 +349,115 @@ function Loader({ theme, text }) {
   );
 }
 
+// ─── Pomodoro Timer ──────────────────────────────────────────────────
+const TIMER_MODES = [
+  { id: "work",       label: "Fokus",     minutes: 25, color: "#ef4444" },
+  { id: "short",      label: "Kurze Pause", minutes: 5,  color: "#22c55e" },
+  { id: "long",       label: "Lange Pause", minutes: 15, color: "#3b82f6" },
+];
+
+function PomodoroTimer({ theme }) {
+  const t = THEMES[theme];
+  const [modeIdx, setModeIdx] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(TIMER_MODES[0].minutes * 60);
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef(null);
+  const mode = TIMER_MODES[modeIdx];
+
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => {
+        setSecondsLeft((s) => {
+          if (s <= 1) {
+            clearInterval(intervalRef.current);
+            setRunning(false);
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
+
+  const switchMode = (idx) => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setModeIdx(idx);
+    setSecondsLeft(TIMER_MODES[idx].minutes * 60);
+  };
+
+  const reset = () => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setSecondsLeft(mode.minutes * 60);
+  };
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const ss = String(secondsLeft % 60).padStart(2, "0");
+  const progress = 1 - secondsLeft / (mode.minutes * 60);
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  const finished = secondsLeft === 0;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Mode switcher */}
+      <div style={{ display: "flex", gap: 4 }}>
+        {TIMER_MODES.map((m, i) => (
+          <button key={m.id} onClick={() => switchMode(i)} style={{
+            padding: "4px 10px", borderRadius: 6, border: "none", fontSize: 11, fontWeight: 600,
+            cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
+            background: modeIdx === i ? m.color : t.bgCard,
+            color: modeIdx === i ? "#fff" : t.textSecondary,
+            opacity: modeIdx === i ? 1 : 0.7,
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* Ring + Time */}
+      <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+        <svg width="52" height="52" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="26" cy="26" r={radius} fill="none" stroke={t.border} strokeWidth="3" />
+          <circle
+            cx="26" cy="26" r={radius} fill="none"
+            stroke={finished ? t.success : mode.color}
+            strokeWidth="3"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - progress)}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 0.9s linear" }}
+          />
+        </svg>
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 11, fontWeight: 700, color: finished ? t.success : t.text, letterSpacing: 0.5,
+        }}>
+          {finished ? "✓" : `${mm}:${ss}`}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={() => setRunning((r) => !r)} style={{
+          width: 32, height: 32, borderRadius: 8, border: "none",
+          background: running ? t.bgCard : mode.color,
+          color: running ? t.text : "#fff",
+          cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+          outline: running ? `1px solid ${t.border}` : "none",
+        }}>{running ? "⏸" : "▶"}</button>
+        <button onClick={reset} style={{
+          width: 32, height: 32, borderRadius: 8, border: `1px solid ${t.border}`,
+          background: t.bgCard, color: t.textSecondary,
+          cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+        }}>↺</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Learning Calendar ───────────────────────────────────────────────
 function LernkalenderComp({ theme }) {
   const t = THEMES[theme];
@@ -612,6 +721,9 @@ export default function StudyBot() {
             <div style={{ fontSize: 11, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase" }}>AI-Powered Learning</div>
           </div>
         </div>
+
+        <PomodoroTimer theme={theme} />
+
         <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} style={{
           width: 40, height: 40, borderRadius: 10, border: `1px solid ${t.border}`,
           background: t.bgCard, cursor: "pointer", fontSize: 18,
