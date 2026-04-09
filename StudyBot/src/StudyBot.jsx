@@ -25,7 +25,32 @@ const TABS = [
   { id: "cards", label: "Karteikarten", icon: "🃏" },
   { id: "summary", label: "Zusammenfassung", icon: "📋" },
   { id: "quiz", label: "Quiz", icon: "🧠" },
+  { id: "history", label: "Lernhistorie", icon: "📅" },
 ];
+
+// ─── Learning History Helpers ────────────────────────────────────────
+
+const HISTORY_KEY = "studybot_lernhistorie";
+
+export function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveSession(dateStr) {
+  const history = loadHistory();
+  if (!history.includes(dateStr)) {
+    history.push(dateStr);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }
+}
+
+export function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // ─── Smart Text Analysis Engine (No API needed) ─────────────────────
 
@@ -324,6 +349,162 @@ function Loader({ theme, text }) {
   );
 }
 
+// ─── Learning Calendar ───────────────────────────────────────────────
+function LernkalenderComp({ theme }) {
+  const t = THEMES[theme];
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const [history, setHistory] = useState(() => loadHistory());
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+  const dayNames = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // Monday-based: 0=Mo,6=So
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = lastDay.getDate();
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const todayStr = getTodayStr();
+  const sessionCount = history.length;
+  const thisMonthSessions = history.filter((d) => d.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`)).length;
+
+  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+  const refresh = () => setHistory(loadHistory());
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>📅 Lernhistorie</h2>
+        <button onClick={refresh} style={{
+          padding: "6px 14px", borderRadius: 8, border: `1px solid ${t.border}`,
+          background: t.bgCard, color: t.textSecondary, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+        }}>↺ Aktualisieren</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+        <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 14, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: t.textMuted, marginBottom: 6 }}>Gesamt Lerntage</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: t.accent }}>{sessionCount}</div>
+        </div>
+        <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 14, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: t.textMuted, marginBottom: 6 }}>Dieser Monat</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: t.accentLight }}>{thisMonthSessions}</div>
+        </div>
+      </div>
+
+      {/* Calendar */}
+      <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 16, padding: 24 }}>
+        {/* Month Navigation */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button onClick={prevMonth} style={{
+            width: 36, height: 36, borderRadius: 8, border: `1px solid ${t.border}`,
+            background: t.bgSecondary, color: t.text, cursor: "pointer", fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>‹</button>
+          <div style={{ fontSize: 17, fontWeight: 700, color: t.text }}>
+            {monthNames[month]} {year}
+          </div>
+          <button onClick={nextMonth} style={{
+            width: 36, height: 36, borderRadius: 8, border: `1px solid ${t.border}`,
+            background: t.bgSecondary, color: t.text, cursor: "pointer", fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>›</button>
+        </div>
+
+        {/* Day Headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 8 }}>
+          {dayNames.map((d) => (
+            <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase", padding: "4px 0" }}>
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Day Cells */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={`empty-${i}`} />;
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const isToday = dateStr === todayStr;
+            const hasSession = history.includes(dateStr);
+            return (
+              <div key={dateStr} style={{
+                aspectRatio: "1", borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: hasSession || isToday ? 700 : 400,
+                background: hasSession ? t.accent : isToday ? t.accentDim : "transparent",
+                color: hasSession ? "#fff" : isToday ? t.accent : t.text,
+                border: isToday && !hasSession ? `1.5px solid ${t.accent}` : "1.5px solid transparent",
+                position: "relative",
+              }}>
+                {day}
+                {hasSession && (
+                  <div style={{
+                    position: "absolute", bottom: 3, left: "50%", transform: "translateX(-50%)",
+                    width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.7)",
+                  }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", gap: 20, marginTop: 20, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: t.textSecondary }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: t.accent }} />
+            Gelernt
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: t.textSecondary }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, border: `1.5px solid ${t.accent}` }} />
+            Heute
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Sessions */}
+      {history.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Letzte Lernsessions</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[...history].reverse().slice(0, 5).map((d) => {
+              const date = new Date(d + "T00:00:00");
+              const label = date.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+              const isToday = d === todayStr;
+              return (
+                <div key={d} style={{
+                  background: t.bgCard, border: `1px solid ${isToday ? t.accent : t.border}`,
+                  borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: isToday ? t.accent : t.accentLight, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, color: t.text }}>{label}</span>
+                  {isToday && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: t.accent, letterSpacing: 1 }}>HEUTE</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {history.length === 0 && (
+        <div style={{ marginTop: 32, textAlign: "center", color: t.textMuted, fontSize: 14 }}>
+          Noch keine Lernsessions. Generiere dein erstes Lernmaterial!
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────
 export default function StudyBot() {
   const [theme, setTheme] = useState("dark");
@@ -398,6 +579,7 @@ export default function StudyBot() {
       await new Promise((r) => setTimeout(r, 400));
       setQuiz(generateQuiz(inputText));
 
+      saveSession(getTodayStr());
       setGenerated(true); setQuizAnswers({}); setQuizRevealed(false); setCardIndex(0); setActiveTab("cards");
     } catch (e) {
       setError("Fehler bei der Verarbeitung: " + e.message);
@@ -444,7 +626,7 @@ export default function StudyBot() {
       }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
-          const isDisabled = tab.id !== "input" && !generated;
+          const isDisabled = tab.id !== "input" && tab.id !== "history" && !generated;
           return (
             <button key={tab.id} onClick={() => !isDisabled && setActiveTab(tab.id)} style={{
               padding: "10px 18px", borderRadius: 10, border: "none",
@@ -609,6 +791,11 @@ export default function StudyBot() {
               padding: 28, lineHeight: 1.8, fontSize: 15, color: t.text, whiteSpace: "pre-wrap",
             }}>{summary}</div>
           </div>
+        )}
+
+        {/* ═══ HISTORY ═══ */}
+        {activeTab === "history" && (
+          <LernkalenderComp theme={theme} />
         )}
 
         {/* ═══ QUIZ ═══ */}
