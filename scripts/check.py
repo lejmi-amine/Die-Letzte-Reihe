@@ -18,8 +18,9 @@ def check_tool(name: str) -> bool:
 
 def check_npm_deps(cwd: str) -> bool:
     """Return True if node_modules exists and npm install succeeds."""
+    npm = "npm.cmd" if sys.platform == "win32" else "npm"
     result = subprocess.run(
-        ["npm", "install", "--dry-run"],
+        [npm, "install", "--dry-run"],
         cwd=cwd,
         capture_output=True,
         check=False,

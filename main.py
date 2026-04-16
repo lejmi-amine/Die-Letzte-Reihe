@@ -21,10 +21,11 @@ def run(command: list[str], cwd: str) -> None:
 
 def main() -> None:
     """Entry point — dispatch based on CLI argument."""
+    npm = "npm.cmd" if sys.platform == "win32" else "npm"
     commands = {
-        "dev": ["npm", "run", "dev"],
-        "test": ["npm", "test"],
-        "coverage": ["npm", "run", "test:coverage"],
+        "dev": [npm, "run", "dev"],
+        "test": [npm, "test"],
+        "coverage": [npm, "run", "test:coverage"],
     }
 
     arg = sys.argv[1] if len(sys.argv) > 1 else "dev"
