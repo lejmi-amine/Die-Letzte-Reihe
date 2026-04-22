@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // ─── Theme & Constants ───────────────────────────────────────────────
 const MAX_CHARS = 10000;
@@ -25,7 +25,32 @@ const TABS = [
   { id: "cards", label: "Karteikarten", icon: "🃏" },
   { id: "summary", label: "Zusammenfassung", icon: "📋" },
   { id: "quiz", label: "Quiz", icon: "🧠" },
+  { id: "history", label: "Lernhistorie", icon: "📅" },
 ];
+
+// ─── Learning History Helpers ────────────────────────────────────────
+
+const HISTORY_KEY = "studybot_lernhistorie";
+
+export function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveSession(dateStr) {
+  const history = loadHistory();
+  if (!history.includes(dateStr)) {
+    history.push(dateStr);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }
+}
+
+export function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // ─── Smart Text Analysis Engine (No API needed) ─────────────────────
 
@@ -248,8 +273,9 @@ function FlashcardComp({ card, index, total, theme, onDragStart, onDragOver, onD
 }
 
 // ─── Mini Card ───────────────────────────────────────────────────────
-function MiniCard({ card, index, theme, onDragStart, onDragOver, onDrop, isDragOver, onClick }) {
+function MiniCard({ card, index, theme, onDragStart, onDragOver, onDrop, isDragOver, onClick, rating }) {
   const t = THEMES[theme];
+  const ratingDot = { easy: t.success, medium: t.warning, hard: t.error }[rating];
   return (
     <div
       draggable
@@ -259,13 +285,20 @@ function MiniCard({ card, index, theme, onDragStart, onDragOver, onDrop, isDragO
       onClick={() => onClick(index)}
       style={{
         background: isDragOver ? t.accentDim : `linear-gradient(135deg, ${t.bgCard}, ${t.bgCardHover})`,
-        border: `1.5px solid ${isDragOver ? t.accent : t.border}`, borderRadius: 14,
+        border: `1.5px solid ${isDragOver ? t.accent : ratingDot || t.border}`, borderRadius: 14,
         padding: "16px 18px", cursor: "grab", transition: "all 0.2s",
         transform: isDragOver ? "scale(1.04)" : "scale(1)", minHeight: 90,
         display: "flex", flexDirection: "column", gap: 8,
       }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: t.accent, letterSpacing: 1.5, textTransform: "uppercase" }}>Karte {index + 1}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.accent, letterSpacing: 1.5, textTransform: "uppercase" }}>Karte {index + 1}</div>
+        {ratingDot && (
+          <div style={{ fontSize: 10, fontWeight: 700, color: ratingDot, letterSpacing: 1 }}>
+            {{ easy: "✓ Einfach", medium: "~ Mittel", hard: "✗ Schwer" }[rating]}
+          </div>
+        )}
+      </div>
       <div style={{ fontSize: 13, color: t.text, lineHeight: 1.5, fontWeight: 500 }}>
         {card.front.length > 80 ? card.front.slice(0, 80) + "…" : card.front}
       </div>
@@ -323,6 +356,271 @@ function Loader({ theme, text }) {
   );
 }
 
+// ─── Pomodoro Timer ──────────────────────────────────────────────────
+const TIMER_MODES = [
+  { id: "work",       label: "Fokus",     minutes: 25, color: "#ef4444" },
+  { id: "short",      label: "Kurze Pause", minutes: 5,  color: "#22c55e" },
+  { id: "long",       label: "Lange Pause", minutes: 15, color: "#3b82f6" },
+];
+
+function PomodoroTimer({ theme }) {
+  const t = THEMES[theme];
+  const [modeIdx, setModeIdx] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(TIMER_MODES[0].minutes * 60);
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef(null);
+  const mode = TIMER_MODES[modeIdx];
+
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => {
+        setSecondsLeft((s) => {
+          if (s <= 1) {
+            clearInterval(intervalRef.current);
+            setRunning(false);
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
+
+  const switchMode = (idx) => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setModeIdx(idx);
+    setSecondsLeft(TIMER_MODES[idx].minutes * 60);
+  };
+
+  const reset = () => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setSecondsLeft(mode.minutes * 60);
+  };
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const ss = String(secondsLeft % 60).padStart(2, "0");
+  const progress = 1 - secondsLeft / (mode.minutes * 60);
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  const finished = secondsLeft === 0;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Mode switcher */}
+      <div style={{ display: "flex", gap: 4 }}>
+        {TIMER_MODES.map((m, i) => (
+          <button key={m.id} onClick={() => switchMode(i)} style={{
+            padding: "4px 10px", borderRadius: 6, border: "none", fontSize: 11, fontWeight: 600,
+            cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
+            background: modeIdx === i ? m.color : t.bgCard,
+            color: modeIdx === i ? "#fff" : t.textSecondary,
+            opacity: modeIdx === i ? 1 : 0.7,
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* Ring + Time */}
+      <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+        <svg width="52" height="52" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="26" cy="26" r={radius} fill="none" stroke={t.border} strokeWidth="3" />
+          <circle
+            cx="26" cy="26" r={radius} fill="none"
+            stroke={finished ? t.success : mode.color}
+            strokeWidth="3"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - progress)}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 0.9s linear" }}
+          />
+        </svg>
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 11, fontWeight: 700, color: finished ? t.success : t.text, letterSpacing: 0.5,
+        }}>
+          {finished ? "✓" : `${mm}:${ss}`}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={() => setRunning((r) => !r)} style={{
+          width: 32, height: 32, borderRadius: 8, border: "none",
+          background: running ? t.bgCard : mode.color,
+          color: running ? t.text : "#fff",
+          cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+          outline: running ? `1px solid ${t.border}` : "none",
+        }}>{running ? "⏸" : "▶"}</button>
+        <button onClick={reset} style={{
+          width: 32, height: 32, borderRadius: 8, border: `1px solid ${t.border}`,
+          background: t.bgCard, color: t.textSecondary,
+          cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+        }}>↺</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Learning Calendar ───────────────────────────────────────────────
+function LernkalenderComp({ theme }) {
+  const t = THEMES[theme];
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const [history, setHistory] = useState(() => loadHistory());
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+  const dayNames = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // Monday-based: 0=Mo,6=So
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = lastDay.getDate();
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const todayStr = getTodayStr();
+  const sessionCount = history.length;
+  const thisMonthSessions = history.filter((d) => d.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`)).length;
+
+  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+  const refresh = () => setHistory(loadHistory());
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <h2 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>📅 Lernhistorie</h2>
+        <button onClick={refresh} style={{
+          padding: "6px 14px", borderRadius: 8, border: `1px solid ${t.border}`,
+          background: t.bgCard, color: t.textSecondary, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+        }}>↺ Aktualisieren</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+        <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 14, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: t.textMuted, marginBottom: 6 }}>Gesamt Lerntage</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: t.accent }}>{sessionCount}</div>
+        </div>
+        <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 14, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: t.textMuted, marginBottom: 6 }}>Dieser Monat</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: t.accentLight }}>{thisMonthSessions}</div>
+        </div>
+      </div>
+
+      {/* Calendar */}
+      <div style={{ background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 16, padding: 24 }}>
+        {/* Month Navigation */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button onClick={prevMonth} style={{
+            width: 36, height: 36, borderRadius: 8, border: `1px solid ${t.border}`,
+            background: t.bgSecondary, color: t.text, cursor: "pointer", fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>‹</button>
+          <div style={{ fontSize: 17, fontWeight: 700, color: t.text }}>
+            {monthNames[month]} {year}
+          </div>
+          <button onClick={nextMonth} style={{
+            width: 36, height: 36, borderRadius: 8, border: `1px solid ${t.border}`,
+            background: t.bgSecondary, color: t.text, cursor: "pointer", fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>›</button>
+        </div>
+
+        {/* Day Headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 8 }}>
+          {dayNames.map((d) => (
+            <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase", padding: "4px 0" }}>
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Day Cells */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={`empty-${i}`} />;
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const isToday = dateStr === todayStr;
+            const hasSession = history.includes(dateStr);
+            return (
+              <div key={dateStr} style={{
+                aspectRatio: "1", borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: hasSession || isToday ? 700 : 400,
+                background: hasSession ? t.accent : isToday ? t.accentDim : "transparent",
+                color: hasSession ? "#fff" : isToday ? t.accent : t.text,
+                border: isToday && !hasSession ? `1.5px solid ${t.accent}` : "1.5px solid transparent",
+                position: "relative",
+              }}>
+                {day}
+                {hasSession && (
+                  <div style={{
+                    position: "absolute", bottom: 3, left: "50%", transform: "translateX(-50%)",
+                    width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.7)",
+                  }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", gap: 20, marginTop: 20, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: t.textSecondary }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: t.accent }} />
+            Gelernt
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: t.textSecondary }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, border: `1.5px solid ${t.accent}` }} />
+            Heute
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Sessions */}
+      {history.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Letzte Lernsessions</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[...history].reverse().slice(0, 5).map((d) => {
+              const date = new Date(d + "T00:00:00");
+              const label = date.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+              const isToday = d === todayStr;
+              return (
+                <div key={d} style={{
+                  background: t.bgCard, border: `1px solid ${isToday ? t.accent : t.border}`,
+                  borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: isToday ? t.accent : t.accentLight, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, color: t.text }}>{label}</span>
+                  {isToday && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: t.accent, letterSpacing: 1 }}>HEUTE</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {history.length === 0 && (
+        <div style={{ marginTop: 32, textAlign: "center", color: t.textMuted, fontSize: 14 }}>
+          Noch keine Lernsessions. Generiere dein erstes Lernmaterial!
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────
 export default function StudyBot() {
   const [theme, setTheme] = useState("dark");
@@ -345,6 +643,8 @@ export default function StudyBot() {
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [fileDragOver, setFileDragOver] = useState(false);
+  const [cardRatings, setCardRatings] = useState({});
+  const [deck, setDeck] = useState([]);
 
   const t = THEMES[theme];
   const fontStack = "'Outfit', 'DM Sans', system-ui, sans-serif";
@@ -387,17 +687,37 @@ export default function StudyBot() {
     setDragOverIdx(null);
   }, [dragIdx]);
 
-  const shuffleCards = useCallback(() => {
-    setCards((prev) => {
-      const arr = [...prev];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    });
-    setCardIndex(0);
+  const buildWeightedDeck = useCallback((totalCards, ratings) => {
+    const result = [];
+    for (let i = 0; i < totalCards; i++) {
+      const r = ratings[i];
+      const count = r === "easy" ? 1 : r === "hard" ? 3 : 2;
+      for (let j = 0; j < count; j++) result.push(i);
+    }
+    // Fisher-Yates shuffle
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
   }, []);
+
+  const handleRating = useCallback((rating) => {
+    setCardRatings((prev) => {
+      const currentCardIdx = deck[cardIndex];
+      const newRatings = { ...prev, [currentCardIdx]: rating };
+      if (cardIndex < deck.length - 1) {
+        setCardIndex((ci) => ci + 1);
+      } else {
+        // End of round → rebuild weighted deck
+        const newDeck = buildWeightedDeck(cards.length, newRatings);
+        setDeck(newDeck);
+        setCardIndex(0);
+      }
+      return newRatings;
+    });
+  }, [deck, cardIndex, cards.length, buildWeightedDeck]);
+
 
   const generate = useCallback(async () => {
     if (!inputText.trim() || inputText.trim().length < 30) {
@@ -413,7 +733,10 @@ export default function StudyBot() {
 
       setLoadingMsg("Karteikarten werden erstellt...");
       await new Promise((r) => setTimeout(r, 500));
-      setCards(generateFlashcards(inputText, cardCount));
+      const newCards = generateFlashcards(inputText);
+      setCards(newCards);
+      setDeck(newCards.map((_, i) => i));
+      setCardRatings({});
 
       setLoadingMsg("Zusammenfassung wird erstellt...");
       await new Promise((r) => setTimeout(r, 400));
@@ -423,6 +746,7 @@ export default function StudyBot() {
       await new Promise((r) => setTimeout(r, 400));
       setQuiz(generateQuiz(inputText));
 
+      saveSession(getTodayStr());
       setGenerated(true); setQuizAnswers({}); setQuizRevealed(false); setCardIndex(0); setActiveTab("cards");
     } catch (e) {
       setError("Fehler bei der Verarbeitung: " + e.message);
@@ -455,6 +779,9 @@ export default function StudyBot() {
             <div style={{ fontSize: 11, color: t.textMuted, letterSpacing: 1, textTransform: "uppercase" }}>AI-Powered Learning</div>
           </div>
         </div>
+
+        <PomodoroTimer theme={theme} />
+
         <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} style={{
           width: 40, height: 40, borderRadius: 10, border: `1px solid ${t.border}`,
           background: t.bgCard, cursor: "pointer", fontSize: 18,
@@ -469,7 +796,7 @@ export default function StudyBot() {
       }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
-          const isDisabled = tab.id !== "input" && !generated;
+          const isDisabled = tab.id !== "input" && tab.id !== "history" && !generated;
           return (
             <button key={tab.id} onClick={() => !isDisabled && setActiveTab(tab.id)} style={{
               padding: "10px 18px", borderRadius: 10, border: "none",
@@ -596,43 +923,92 @@ export default function StudyBot() {
               </div>
             </div>
 
-            {cardView === "single" && cards.length > 0 && (
-              <>
-                <FlashcardComp card={cards[cardIndex]} index={cardIndex} total={cards.length} theme={theme}
-                  onDragStart={setDragIdx} onDragOver={setDragOverIdx} onDrop={handleCardDrop}
-                  isDragOver={dragOverIdx === cardIndex}
-                  flipped={flippedCard} onFlip={() => setFlippedCard((f) => !f)} />
-                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 24 }}>
-                  <button onClick={() => { setCardIndex(Math.max(0, cardIndex - 1)); setFlippedCard(false); }} disabled={cardIndex === 0} style={{
-                    padding: "10px 24px", borderRadius: 10, border: `1px solid ${t.border}`,
-                    background: t.bgCard, color: cardIndex === 0 ? t.textMuted : t.text,
-                    cursor: cardIndex === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 500, fontFamily: fontStack,
-                  }}>← Zurück</button>
-                  <button onClick={() => { setCardIndex(Math.min(cards.length - 1, cardIndex + 1)); setFlippedCard(false); }} disabled={cardIndex === cards.length - 1} style={{
-                    padding: "10px 24px", borderRadius: 10, border: "none",
-                    background: cardIndex === cards.length - 1 ? t.textMuted : t.accent,
-                    color: "#fff", cursor: cardIndex === cards.length - 1 ? "not-allowed" : "pointer",
-                    fontSize: 14, fontWeight: 500, fontFamily: fontStack,
-                  }}>Weiter →</button>
-                </div>
-                <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 16 }}>
-                  {cards.map((_, i) => (
-                    <div key={i} onClick={() => setCardIndex(i)} style={{
-                      width: i === cardIndex ? 24 : 8, height: 8, borderRadius: 4,
-                      background: i === cardIndex ? t.accent : t.border, cursor: "pointer", transition: "all 0.3s",
-                    }} />
-                  ))}
-                </div>
-              </>
-            )}
+            {cardView === "single" && cards.length > 0 && deck.length > 0 && (() => {
+              const currentCardIdx = deck[cardIndex];
+              const currentRating = cardRatings[currentCardIdx];
+              const ratingConfig = [
+                { key: "easy",   label: "Einfach", color: t.success,  bg: "rgba(74,222,128,0.12)",  symbol: "✓" },
+                { key: "medium", label: "Mittel",  color: t.warning,  bg: "rgba(251,191,36,0.12)",  symbol: "~" },
+                { key: "hard",   label: "Schwer",  color: t.error,    bg: "rgba(248,113,113,0.12)", symbol: "✗" },
+              ];
+              const ratedCount = Object.keys(cardRatings).length;
+              const hardCount = Object.values(cardRatings).filter((r) => r === "hard").length;
+              return (
+                <>
+                  <FlashcardComp card={cards[currentCardIdx]} index={cardIndex} total={deck.length} theme={theme}
+                    onDragStart={setDragIdx} onDragOver={setDragOverIdx} onDrop={handleCardDrop}
+                    isDragOver={dragOverIdx === cardIndex} />
+
+                  {/* Rating buttons */}
+                  <div style={{ marginTop: 20, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: t.textMuted, marginBottom: 10 }}>
+                      Wie schwer war diese Karte?
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+                      {ratingConfig.map(({ key, label, color, bg, symbol }) => {
+                        const isActive = currentRating === key;
+                        return (
+                          <button key={key} onClick={() => handleRating(key)} style={{
+                            padding: "10px 22px", borderRadius: 10, fontFamily: fontStack,
+                            border: `1.5px solid ${isActive ? color : t.border}`,
+                            background: isActive ? bg : t.bgCard,
+                            color: isActive ? color : t.textSecondary,
+                            fontSize: 13, fontWeight: isActive ? 700 : 500,
+                            cursor: "pointer", transition: "all 0.2s",
+                            display: "flex", alignItems: "center", gap: 6,
+                          }}>
+                            <span style={{ fontSize: 15 }}>{symbol}</span>{label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {ratedCount > 0 && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: t.textMuted }}>
+                        {ratedCount}/{cards.length} bewertet
+                        {hardCount > 0 && <span style={{ color: t.error, marginLeft: 8 }}>• {hardCount} schwere Karte{hardCount > 1 ? "n" : ""} kommen öfter</span>}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Navigation */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16 }}>
+                    <button onClick={() => setCardIndex(Math.max(0, cardIndex - 1))} disabled={cardIndex === 0} style={{
+                      padding: "10px 24px", borderRadius: 10, border: `1px solid ${t.border}`,
+                      background: t.bgCard, color: cardIndex === 0 ? t.textMuted : t.text,
+                      cursor: cardIndex === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 500, fontFamily: fontStack,
+                    }}>← Zurück</button>
+                    <button onClick={() => setCardIndex(Math.min(deck.length - 1, cardIndex + 1))} disabled={cardIndex === deck.length - 1} style={{
+                      padding: "10px 24px", borderRadius: 10, border: "none",
+                      background: cardIndex === deck.length - 1 ? t.textMuted : t.accent,
+                      color: "#fff", cursor: cardIndex === deck.length - 1 ? "not-allowed" : "pointer",
+                      fontSize: 14, fontWeight: 500, fontFamily: fontStack,
+                    }}>Weiter →</button>
+                  </div>
+
+                  {/* Deck progress dots */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 14, flexWrap: "wrap" }}>
+                    {deck.map((origIdx, i) => {
+                      const r = cardRatings[origIdx];
+                      const dotColor = i === cardIndex ? t.accent : r === "easy" ? t.success : r === "hard" ? t.error : r === "medium" ? t.warning : t.border;
+                      return (
+                        <div key={i} onClick={() => setCardIndex(i)} style={{
+                          width: i === cardIndex ? 20 : 7, height: 7, borderRadius: 4,
+                          background: dotColor, cursor: "pointer", transition: "all 0.3s",
+                        }} />
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
 
             {cardView === "grid" && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
                 {cards.map((card, i) => (
                   <MiniCard key={i} card={card} index={i} theme={theme}
                     onDragStart={setDragIdx} onDragOver={setDragOverIdx} onDrop={handleCardDrop}
-                    isDragOver={dragOverIdx === i}
-                    onClick={(idx) => { setCardIndex(idx); setCardView("single"); }} />
+                    isDragOver={dragOverIdx === i} rating={cardRatings[i]}
+                    onClick={(idx) => { setCardIndex(deck.indexOf(idx)); setCardView("single"); }} />
                 ))}
               </div>
             )}
@@ -661,6 +1037,11 @@ export default function StudyBot() {
               padding: 28, lineHeight: 1.8, fontSize: 15, color: t.text, whiteSpace: "pre-wrap",
             }}>{summary}</div>
           </div>
+        )}
+
+        {/* ═══ HISTORY ═══ */}
+        {activeTab === "history" && (
+          <LernkalenderComp theme={theme} />
         )}
 
         {/* ═══ QUIZ ═══ */}
