@@ -1,0 +1,29 @@
+# Ruff linter configuration
+# https://docs.astral.sh/ruff/configuration/
+
+# Target Python version
+target-version = "py312"
+
+# Maximum line length
+line-length = 120
+
+# Directories and files to exclude from linting
+exclude = [
+    ".git",
+    ".github",
+    "node_modules",
+    "dist",
+    "coverage",
+    "__pycache__",
+]
+
+[lint]
+# Enable commonly used rule sets:
+# E/W = pycodestyle (PEP 8 style)
+# F   = pyflakes (undefined names, unused imports)
+# I   = isort (import ordering)
+select = ["E", "W", "F", "I"]
+
+# Rules explicitly ignored:
+# E501 = line too long (handled by line-length above)
+ignore = ["E501"]
