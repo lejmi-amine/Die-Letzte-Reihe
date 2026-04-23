@@ -1,4 +1,4 @@
-name: Lint
+name: CI
 
 on:
   push:
@@ -25,3 +25,26 @@ jobs:
 
       - name: Run Ruff linter
         run: ruff check .
+
+  vitest:
+    name: Vitest Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: StudyBot/package-lock.json
+
+      - name: Install dependencies
+        working-directory: StudyBot
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: StudyBot
+        run: npm run test:coverage
