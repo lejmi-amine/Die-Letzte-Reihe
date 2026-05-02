@@ -1,72 +1,176 @@
-# StudyBot — AI-Powered Learning Tool
+# StudyBot
 
-> DHBW Software Engineering Projekt | 4. Semester
+**Turn any lecture text into flashcards, a summary, and a quiz — instantly, in your browser.**
 
-AI-gestütztes Lern-Tool das aus Vorlesungstexten automatisch Karteikarten, Zusammenfassungen und Quizfragen generiert.
+StudyBot is a client-side React app built for students who need to convert raw study material into interactive learning content without copy-pasting into multiple tools. Paste your text, click Generate, and start learning in under 10 seconds.
 
-## Features
+> DHBW Software Engineering Project | 4th Semester
 
-- **AI-Karteikarten** — Automatisch generierte Flip-Cards mit Drag & Drop Sortierung
-- **Zusammenfassung** — Strukturierte Zusammenfassung des Lernstoffs
-- **Quiz** — Multiple-Choice mit Auswertung und Punktestand
-- **Datei-Import** — Text-Dateien per Drag & Drop einfügen
-- **Dark/Light Mode** — Theme-Toggle
-- **Responsive Design** — Funktioniert auf Desktop und Mobile
+---
 
-## Tech Stack
+## Who Is This For?
 
-- **React 18** — UI Framework mit Hooks (useState, useCallback)
-- **Vite** — Build Tool & Dev Server
-- **Claude API** — AI-Text-Generierung (Anthropic)
-- **CSS-in-JS** — Inline Styles mit Theme-System
+| | |
+|---|---|
+| **Role** | Students and self-learners |
+| **Skill level** | No technical background needed to use the app. Basic terminal knowledge required for local setup. |
+| **Context** | Exam preparation, lecture review, self-study sessions |
+| **Primary goal** | Quickly generate study material (flashcards, summary, quiz) from a block of text |
 
-## Setup & Start
+---
 
-### Voraussetzungen
-- [Node.js](https://nodejs.org/) (Version 18+)
-- npm (kommt mit Node.js)
+## Quick Start
 
-### Installation
+Get StudyBot running locally in under 2 minutes.
+
+**Prerequisites:**
+- [Node.js](https://nodejs.org/) 18 or higher
+- npm (included with Node.js)
 
 ```bash
-# 1. In den Projektordner wechseln
-cd studybot
+# 1. Clone the repository
+git clone https://github.com/lejmi-amine/Die-Letzte-Reihe.git
+cd Die-Letzte-Reihe/StudyBot
 
-# 2. Dependencies installieren
+# 2. Install dependencies
 npm install
 
-# 3. Dev-Server starten
+# 3. Start the dev server
 npm run dev
 ```
 
-Die App öffnet sich automatisch unter `http://localhost:3000`.
+Open your browser at **`http://localhost:3000`**.
 
-## Projektstruktur
+**First successful outcome:** Paste any paragraph of text into the input field, click **Generate**, and you will see your first set of flashcards within seconds.
+
+---
+
+## Core Concept: Text → Key Terms → Study Material
+
+StudyBot does not call any external AI service. Everything runs locally in your browser using a custom NLP pipeline:
+
+1. **Sentence extraction** — the text is split on punctuation marks (`.`, `!`, `?`) and sentences shorter than 20 characters are discarded
+2. **Key term extraction** — all words are lowercased, stopwords (common German and English words) are removed, and the remaining words are ranked by frequency
+3. **Content generation** — the top-ranked terms are matched back to sentences to produce flashcard fronts/backs, a structured summary, and multiple-choice quiz questions
+
+**Mental model:** Think of it as a highlighter that automatically finds the most important words in your text and builds study material around them. The output quality depends directly on the richness of your input — a dense, well-written paragraph produces better cards than a bullet-point list.
+
+---
+
+## How To: Generate Your First Flashcard Set
+
+1. Open the app at `http://localhost:3000`
+2. Paste a paragraph of lecture text into the input field (minimum 30 characters)
+3. Click the **Generate** button
+4. Navigate to the **Karteikarten** tab
+5. Click any card to flip it and reveal the answer
+6. Use the **Shuffle** button to randomize card order
+7. Use the card count selector (**6 / 9 / 12 / 15**) to adjust how many cards are shown
+8. Press **→** / **←** arrow keys to navigate between cards without using the mouse
+
+> **Tip:** For best results, use a continuous paragraph of at least 3–5 sentences. The more content words your text contains, the more accurate the generated cards will be.
+
+---
+
+## Features
+
+**Study tools:**
+- Flashcards with flip animation and keyboard navigation
+- Weighted card review — cards you rate poorly appear more often (Spaced Repetition Light)
+- Shuffle and card count selector (6 / 9 / 12 / 15)
+- Structured summary with key terms, overview, and conclusion sections
+- Copy summary to clipboard
+- Multiple-choice quiz with scoring
+
+**Productivity:**
+- Pomodoro timer in the header
+- Learning history calendar (tracks daily study sessions)
+- Drag & Drop file import (`.txt` files)
+
+**UI:**
+- Dark / Light mode toggle
+- Responsive design — works on desktop and mobile
+
+---
+
+## Project Structure
 
 ```
-studybot/
-├── index.html          # HTML Entry Point
-├── package.json        # Dependencies & Scripts
-├── vite.config.js      # Vite Konfiguration
-├── README.md
-└── src/
-    ├── main.jsx        # React Entry Point
-    └── StudyBot.jsx    # Hauptkomponente
+StudyBot/
+├── index.html                  # HTML entry point
+├── package.json                # Dependencies and scripts
+├── vite.config.js              # Vite configuration
+├── src/
+│   ├── main.jsx                # React entry point
+│   ├── StudyBot.jsx            # Main component (UI and state)
+│   └── studybot.logic.js       # Pure NLP logic (fully tested)
+└── tests/
+    └── studybot.logic.test.js  # 76 unit tests (Vitest)
 ```
 
-## Architektur
+The core NLP logic is fully separated from the UI in `studybot.logic.js`. This means it can be tested without a browser, DOM, or React.
 
-Die App nutzt eine komponentenbasierte Architektur:
+---
 
-- **StudyBot** — Hauptkomponente mit State Management
-- **Flashcard** — Flip-Animation mit CSS 3D Transforms + Drag & Drop
-- **MiniCard** — Grid-Ansicht der Karteikarten
-- **QuizQuestion** — Multiple-Choice mit visueller Auswertung
-- **Loader** — Loading-Spinner Komponente
+## Running Tests
 
-### Design Patterns
+```bash
+# Run all tests
+npm test
 
-- **Lifting State Up** — Zentrales State Management in der Hauptkomponente
-- **Composition** — Wiederverwendbare UI-Komponenten
-- **Theme System** — Dual-Theme über Objekt-basierte Konfiguration
-- **Error Handling** — Try/Catch mit User-Feedback
+# Run tests with coverage report
+npm run test:coverage
+```
+
+**Current coverage** (`studybot.logic.js`):
+
+| Statements | Branches | Functions | Lines |
+|---|---|---|---|
+| 100% | 91.52% | 100% | 100% |
+
+The HTML coverage report opens at `coverage/index.html` after running `npm run test:coverage`.
+
+---
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server at `http://localhost:3000` |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+| `npm test` | Run unit tests |
+| `npm run test:coverage` | Run tests and generate coverage report |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| UI framework | React 18 with Hooks |
+| Build tool | Vite 6 |
+| Styling | CSS-in-JS (inline styles with theme object) |
+| NLP / logic | Custom frequency-based extraction (`studybot.logic.js`) |
+| Testing | Vitest + @vitest/coverage-v8 |
+| CI | GitHub Actions (Ruff linter + Vitest) |
+
+---
+
+## Maintainers
+
+| Name | Role |
+|---|---|
+| [Amine Lejmi](https://github.com/lejmi-amine) | Core logic, UI, CI/CD, testing |
+| David Liebermann | Features (Pomodoro, Lernhistorie, Karten-Bewertung), documentation |
+
+---
+
+## Further Resources
+
+- [Docs/Architecture.md](../Docs/Architecture.md) — Component architecture and design patterns
+- [Docs/TechStack.md](../Docs/TechStack.md) — Technology decisions and rationale
+- [Docs/Unit-Tests.md](../Docs/Unit-Tests.md) — Testing strategy, mocking approach, and full test overview
+- [Docs/user-stories.md](../Docs/user-stories.md) — User personas and product backlog
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — Setup guide, branch workflow, and commit conventions
+- [retrospective.md](../retrospective.md) — Sprint retrospective with lessons learned
