@@ -4,7 +4,7 @@
 
 StudyBot is a client-side React app built for students who need to convert raw study material into interactive learning content without copy-pasting into multiple tools. Paste your text, click Generate, and start learning in under 10 seconds.
 
-> DHBW Software Engineering Project | 4th Semester
+> Software Engineering Project | Die Letzte Reihe
 
 [![CI](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml/badge.svg)](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml)
 ![Coverage](https://img.shields.io/badge/branch%20coverage-91.52%25-brightgreen)
@@ -15,12 +15,12 @@ StudyBot is a client-side React app built for students who need to convert raw s
 
 ## Who Is This For?
 
-| | |
-|---|---|
-| **Role** | Students and self-learners |
-| **Skill level** | No technical background needed to use the app. Basic terminal knowledge required for local setup. |
-| **Context** | Exam preparation, lecture review, self-study sessions |
-| **Primary goal** | Quickly generate study material (flashcards, summary, quiz) from a block of text |
+|                  |                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| **Role**         | Students and self-learners                                                                        |
+| **Skill level**  | No technical background needed to use the app. Basic terminal knowledge required for local setup. |
+| **Context**      | Exam preparation, lecture review, self-study sessions                                             |
+| **Primary goal** | Quickly generate study material (flashcards, summary, quiz) from a block of text                  |
 
 ---
 
@@ -29,6 +29,7 @@ StudyBot is a client-side React app built for students who need to convert raw s
 Get StudyBot running locally in under 2 minutes.
 
 **Prerequisites:**
+
 - [Node.js](https://nodejs.org/) 18 or higher
 - npm (included with Node.js)
 
@@ -86,6 +87,7 @@ flowchart LR
 ## Example: Input → Output
 
 **Input text:**
+
 ```
 Photosynthese ist der Prozess, durch den Pflanzen Sonnenlicht in Energie umwandeln.
 Chlorophyll ist das Pigment, das Licht absorbiert und die Reaktion ermöglicht.
@@ -98,6 +100,7 @@ Wasser und Kohlendioxid werden dabei in Glukose und Sauerstoff umgewandelt.
 | Was versteht man unter „Photosynthese"? | Photosynthese ist der Prozess, durch den Pflanzen Sonnenlicht in Energie umwandeln. |
 
 **Generated summary excerpt:**
+
 ```
 Überblick
 
@@ -109,6 +112,7 @@ Die wichtigsten Begriffe sind: Photosynthese, Chlorophyll, Kohlendioxid, Sonnenl
 ```
 
 **Generated quiz question:**
+
 ```
 Welche Aussage über „Chlorophyll" ist korrekt?
 
@@ -123,6 +127,7 @@ Welche Aussage über „Chlorophyll" ist korrekt?
 ## Features
 
 **Study tools:**
+
 - Flashcards with flip animation and keyboard navigation
 - Weighted card review — cards you rate poorly appear more often (Spaced Repetition Light)
 - Shuffle and card count selector (6 / 9 / 12 / 15)
@@ -131,11 +136,13 @@ Welche Aussage über „Chlorophyll" ist korrekt?
 - Multiple-choice quiz with scoring
 
 **Productivity:**
+
 - Pomodoro timer in the header
 - Learning history calendar (tracks daily study sessions)
 - Drag & Drop file import (`.txt` files)
 
 **UI:**
+
 - Dark / Light mode toggle
 - Responsive design — works on desktop and mobile
 
@@ -173,8 +180,8 @@ npm run test:coverage
 **Current coverage** (`studybot.logic.js`):
 
 | Statements | Branches | Functions | Lines |
-|---|---|---|---|
-| 100% | 91.52% | 100% | 100% |
+| ---------- | -------- | --------- | ----- |
+| 100%       | 91.52%   | 100%      | 100%  |
 
 The HTML coverage report opens at `coverage/index.html` after running `npm run test:coverage`.
 
@@ -182,35 +189,35 @@ The HTML coverage report opens at `coverage/index.html` after running `npm run t
 
 ## Available Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server at `http://localhost:3000` |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run unit tests |
-| `npm run test:coverage` | Run tests and generate coverage report |
+| Command                 | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| `npm run dev`           | Start development server at `http://localhost:3000` |
+| `npm run build`         | Build for production                                |
+| `npm run preview`       | Preview production build locally                    |
+| `npm test`              | Run unit tests                                      |
+| `npm run test:coverage` | Run tests and generate coverage report              |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| UI framework | React 18 with Hooks |
-| Build tool | Vite 6 |
-| Styling | CSS-in-JS (inline styles with theme object) |
-| NLP / logic | Custom frequency-based extraction (`studybot.logic.js`) |
-| Testing | Vitest + @vitest/coverage-v8 |
-| CI | GitHub Actions (Ruff linter + Vitest) |
+| Layer        | Technology                                              |
+| ------------ | ------------------------------------------------------- |
+| UI framework | React 18 with Hooks                                     |
+| Build tool   | Vite 6                                                  |
+| Styling      | CSS-in-JS (inline styles with theme object)             |
+| NLP / logic  | Custom frequency-based extraction (`studybot.logic.js`) |
+| Testing      | Vitest + @vitest/coverage-v8                            |
+| CI           | GitHub Actions (Ruff linter + Vitest)                   |
 
 ---
 
 ## Maintainers
 
-| Name | Role |
-|---|---|
-| [Amine Lejmi](https://github.com/lejmi-amine) | Core logic, UI, CI/CD, testing |
-| David Liebermann | Features (Pomodoro, Lernhistorie, Karten-Bewertung), documentation |
+| Name                                          | Role                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------ |
+| [Amine Lejmi](https://github.com/lejmi-amine) | Core logic, UI, CI/CD, testing                                     |
+| David Liebermann                              | Features (Pomodoro, Lernhistorie, Karten-Bewertung), documentation |
 
 ---
 
