@@ -6,6 +6,11 @@ StudyBot is a client-side React app built for students who need to convert raw s
 
 > DHBW Software Engineering Project | 4th Semester
 
+[![CI](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml/badge.svg)](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml)
+![Coverage](https://img.shields.io/badge/branch%20coverage-91.52%25-brightgreen)
+![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
+![Node](https://img.shields.io/badge/node-18%2B-blue)
+
 ---
 
 ## Who Is This For?
@@ -47,13 +52,19 @@ Open your browser at **`http://localhost:3000`**.
 
 ## Core Concept: Text → Key Terms → Study Material
 
-StudyBot does not call any external AI service. Everything runs locally in your browser using a custom NLP pipeline:
+StudyBot runs entirely in your browser — no external AI service, no API key, no data leaving your device. It uses a custom NLP pipeline:
 
-1. **Sentence extraction** — the text is split on punctuation marks (`.`, `!`, `?`) and sentences shorter than 20 characters are discarded
-2. **Key term extraction** — all words are lowercased, stopwords (common German and English words) are removed, and the remaining words are ranked by frequency
-3. **Content generation** — the top-ranked terms are matched back to sentences to produce flashcard fronts/backs, a structured summary, and multiple-choice quiz questions
+```mermaid
+flowchart LR
+    A([📄 Your Text]) --> B[1. Extract Sentences\nsplit on . ! ?\nfilter < 20 chars]
+    B --> C[2. Extract Key Terms\nremove stopwords\nrank by frequency]
+    C --> D{Top Terms}
+    D --> E([🃏 Flashcards\nterm + matching sentence])
+    D --> F([📋 Summary\nintro · key points · conclusion])
+    D --> G([❓ Quiz\nmultiple choice · scoring])
+```
 
-**Mental model:** Think of it as a highlighter that automatically finds the most important words in your text and builds study material around them. The output quality depends directly on the richness of your input — a dense, well-written paragraph produces better cards than a bullet-point list.
+**Mental model:** Think of it as a smart highlighter. It finds the words that appear most in your text, assumes those are the most important concepts, and builds study material around them. The richer your input, the better the output — a dense lecture paragraph works much better than a bullet-point list.
 
 ---
 
@@ -69,6 +80,43 @@ StudyBot does not call any external AI service. Everything runs locally in your 
 8. Press **→** / **←** arrow keys to navigate between cards without using the mouse
 
 > **Tip:** For best results, use a continuous paragraph of at least 3–5 sentences. The more content words your text contains, the more accurate the generated cards will be.
+
+---
+
+## Example: Input → Output
+
+**Input text:**
+```
+Photosynthese ist der Prozess, durch den Pflanzen Sonnenlicht in Energie umwandeln.
+Chlorophyll ist das Pigment, das Licht absorbiert und die Reaktion ermöglicht.
+Wasser und Kohlendioxid werden dabei in Glukose und Sauerstoff umgewandelt.
+```
+
+**Generated flashcard:**
+| Front | Back |
+|---|---|
+| Was versteht man unter „Photosynthese"? | Photosynthese ist der Prozess, durch den Pflanzen Sonnenlicht in Energie umwandeln. |
+
+**Generated summary excerpt:**
+```
+Überblick
+
+Photosynthese ist der Prozess, durch den Pflanzen Sonnenlicht in Energie umwandeln.
+
+Schlüsselbegriffe
+
+Die wichtigsten Begriffe sind: Photosynthese, Chlorophyll, Kohlendioxid, Sonnenlicht, Sauerstoff.
+```
+
+**Generated quiz question:**
+```
+Welche Aussage über „Chlorophyll" ist korrekt?
+
+  ○ Photosynthese ist ein unabhängiges Konzept ohne direkten Zusammenhang.
+  ● Chlorophyll ist das Pigment, das Licht absorbiert und die Reaktion ermöglicht.
+  ○ Es handelt sich um einen Aspekt von Kohlendioxid, nicht von Chlorophyll.
+  ○ Chlorophyll bezieht sich ausschließlich auf Sauerstoff.
+```
 
 ---
 
