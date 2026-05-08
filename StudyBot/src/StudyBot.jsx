@@ -540,6 +540,28 @@ export default function StudyBot() {
     return result;
   }, []);
 
+  const shuffleCards = useCallback(() => {
+    setCards((prev) => {
+      const arr = [...prev];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    });
+    setDeck((prev) => {
+      const arr = [...prev];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    });
+    setCardIndex(0);
+    setFlippedCard(false);
+    setCardRatings({});
+  }, []);
+
   const handleRating = useCallback((rating) => {
     setCardRatings((prev) => {
       const currentCardIdx = deck[cardIndex];
