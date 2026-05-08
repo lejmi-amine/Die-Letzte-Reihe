@@ -48,6 +48,27 @@ export function extractKeyTerms(text) {
     "seinen","seinem","ihre","ihrer","ihren","ihrem","andere","anderen","anderem","anderer",
     "welche","welcher","welches","welchen","welchem","wurde","wurden","werden","könnte",
     "können","sollte","müssen","keine","kein","keinen","keinem","keiner","sondern","oder",
+    // Generic German adjectives and participles — rarely domain-specific as standalone terms
+    "wichtig","wichtige","wichtigen","wichtigem","wichtiger","wichtiges",
+    "wichtigste","wichtigsten","wichtigster","wichtigstem","wichtigstes",
+    "eingesetzt","eingesetzte","eingesetzten","eingesetztem","eingesetzter",
+    "genutzt","genutzte","genutzten","genutztem","genutzter",
+    "verwendet","verwendete","verwendeten","verwendetem","verwendeter",
+    "groß","große","großen","großem","großer","großes",
+    "größte","größten","größter","größtem","größtes",
+    "klein","kleine","kleinen","kleinem","kleiner","kleines",
+    "kurz","kurze","kurzen","kurzem","kurzer","kurzes",
+    "lang","lange","langen","langem","langer","langes",
+    "neu","neue","neuen","neuem","neuer","neues",
+    "gut","gute","guten","gutem","guter","gutes",
+    "besser","beste","besten","bestem","bester","bestes",
+    "stark","starke","starken","starkem","starker","starkes",
+    "möglich","mögliche","möglichen","möglichem","möglicher","mögliches",
+    "bestimmt","bestimmte","bestimmten","bestimmtem","bestimmter","bestimmtes",
+    "gleich","gleiche","gleichen","gleichem","gleicher","gleiches",
+    "klar","klare","klaren","klarem","klarer","klares",
+    "direkt","direkte","direkten","direktem","direkter","direktes",
+    "künstlich","künstliche","künstlichen","künstlichem","künstlicher",
   ]);
 
   const sentences = extractSentences(text);
@@ -170,6 +191,7 @@ export function generateSummary(text) {
     })
     .sort((a, b) => b.score - a.score || a.idx - b.idx)
     .slice(0, 5)
+    .sort((a, b) => a.idx - b.idx)
     .map((s) => s.sentence);
 
   const closing = sentences.length > 3
@@ -178,7 +200,7 @@ export function generateSummary(text) {
 
   let summary = `Überblick\n\n${intro}\n\n`;
   summary += `Kernpunkte\n\n`;
-  keyPoints.forEach((p) => { summary += `${p}\n\n`; });
+  keyPoints.forEach((p) => { summary += `• ${p}\n\n`; });
   summary += `Schlüsselbegriffe\n\n`;
   summary += `Die wichtigsten Begriffe sind: ${topTerms.join(", ")}.\n\n`;
   summary += `Fazit\n\n${closing}`;

@@ -7,7 +7,7 @@ StudyBot is a client-side React app built for students who need to convert raw s
 > Software Engineering Project | Die Letzte Reihe
 
 [![CI](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml/badge.svg)](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml)
-![Coverage](https://img.shields.io/badge/branch%20coverage-92.59%25-brightgreen)
+![Coverage](https://img.shields.io/badge/branch%20coverage-91.35%25-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
 ![Node](https://img.shields.io/badge/node-18%2B-blue)
 
@@ -182,7 +182,7 @@ npm run test:coverage
 
 | Statements | Branches | Functions | Lines |
 | ---------- | -------- | --------- | ----- |
-| 100%       | 92.59%   | 100%      | 100%  |
+| 100%       | 91.35%   | 100%      | 100%  |
 
 The HTML coverage report opens at `coverage/index.html` after running `npm run test:coverage`.
 
