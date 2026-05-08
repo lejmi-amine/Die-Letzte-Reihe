@@ -101,14 +101,14 @@ export function findSentencesWith(sentences, term) {
 
 // ─── Generators ──────────────────────────────────────────────────────
 
-export function generateFlashcards(text) {
+export function generateFlashcards(text, count = 6) {
   const sentences = extractSentences(text);
   const terms = extractKeyTerms(text);
   const cards = [];
   const usedSentences = new Set();
 
   for (const term of terms) {
-    if (cards.length >= 6) break;
+    if (cards.length >= count) break;
     const matches = findSentencesWith(sentences, term);
     for (const match of matches) {
       if (usedSentences.has(match)) continue;
@@ -132,7 +132,7 @@ export function generateFlashcards(text) {
     }
   }
 
-  while (cards.length < 6 && cards.length < sentences.length) {
+  while (cards.length < count && cards.length < sentences.length) {
     const s = sentences[cards.length * 2] || sentences[cards.length];
     if (s && !usedSentences.has(s)) {
       usedSentences.add(s);
