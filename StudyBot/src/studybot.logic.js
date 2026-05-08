@@ -176,27 +176,40 @@ export function generateSummary(text) {
     ? sentences[0]
     : "Der Text behandelt verschiedene Aspekte eines komplexen Themas.";
 
-  // Score each sentence by how many key terms it contains, normalized by length.
-  // Sentences with high term density are more informative than positional selection.
   const termSet = new Set(terms.slice(0, 10).map((t) => t.toLowerCase()));
-  const lastIdx = sentences.length - 1;
-  const candidates = sentences.slice(1, sentences.length > 3 ? lastIdx : undefined);
 
-  const keyPoints = candidates
-    .map((sentence, i) => {
-      const lower = sentence.toLowerCase();
-      const words = lower.replace(/[^a-zäöüß\s]/gi, " ").split(/\s+/).filter(Boolean);
-      const hits = [...termSet].filter((t) => lower.includes(t)).length;
-      return { sentence, score: hits / Math.sqrt(words.length || 1), idx: i };
-    })
+  // Score every sentence by term density (hits / sqrt(length)) for stable selection.
+  const scoredAll = sentences.map((sentence, idx) => {
+    const lower = sentence.toLowerCase();
+    const words = lower.replace(/[^a-zäöüß\s]/gi, " ").split(/\s+/).filter(Boolean);
+    const hits = [...termSet].filter((t) => lower.includes(t)).length;
+    return { sentence, score: hits / Math.sqrt(words.length || 1), idx };
+  });
+
+  // Split into body (intro → 60%) and close (last 40%) so the two sections don't overlap.
+  const closeStart = sentences.length > 3 ? Math.floor(sentences.length * 0.6) : undefined;
+
+  // Key points: body sentences scored by term density, then re-sorted into narrative order.
+  const keyPoints = scoredAll
+    .slice(1, closeStart)
     .sort((a, b) => b.score - a.score || a.idx - b.idx)
     .slice(0, 5)
     .sort((a, b) => a.idx - b.idx)
     .map((s) => s.sentence);
 
-  const closing = sentences.length > 3
-    ? sentences[lastIdx]
-    : "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
+  // Fazit: best 1-2 sentences from last 40%, joined in reading order.
+  let closing;
+  if (sentences.length > 3) {
+    closing = scoredAll
+      .slice(closeStart)
+      .sort((a, b) => b.score - a.score || a.idx - b.idx)
+      .slice(0, 2)
+      .sort((a, b) => a.idx - b.idx)
+      .map((s) => s.sentence)
+      .join(" ");
+  } else {
+    closing = "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
+  }
 
   let summary = `Überblick\n\n${intro}\n\n`;
   summary += `Kernpunkte\n\n`;
