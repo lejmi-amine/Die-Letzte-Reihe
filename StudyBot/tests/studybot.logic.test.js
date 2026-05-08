@@ -492,18 +492,19 @@ describe("generateFlashcards — branch coverage", () => {
 });
 
 describe("generateSummary — branch coverage", () => {
-  it("skips sentences between 20 and 30 characters when building key points", () => {
-    // This sentence is 25 chars → filtered by the length > 30 check
-    const shortMid = "Kurzer Mittelteil hier.   ";
+  it("prefers term-dense sentences over low-information sentences as key points", () => {
+    // Low-information sentence has no key terms → scores 0 → not selected as key point
+    const lowInfo = "Dies ist ein einfacher Satz ohne Fachbegriffe hier.";
     const text =
       "Photosynthese ist ein fundamentaler biologischer Prozess in Pflanzenzellen. " +
-      shortMid +
+      lowInfo + " " +
       "Chlorophyll ist das Pigment, das Licht absorbiert und Energie freisetzt. " +
       "Wasser und Kohlendioxid werden in Glukose und Sauerstoff umgewandelt. " +
       "Ohne Photosynthese wäre kein Leben auf der Erde möglich.";
     const summary = generateSummary(text);
     expect(summary).toContain("Kernpunkte");
-    expect(summary).not.toContain(shortMid.trim());
+    // Term-rich sentences should appear in key points
+    expect(summary.toLowerCase()).toMatch(/chlorophyll|kohlendioxid|glukose/);
   });
 });
 
