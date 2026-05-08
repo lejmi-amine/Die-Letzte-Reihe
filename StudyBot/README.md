@@ -7,6 +7,7 @@ StudyBot is a client-side React app built for students who need to convert raw s
 > Software Engineering Project | Die Letzte Reihe
 
 [![CI](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml/badge.svg)](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml)
+[![Live Demo](https://img.shields.io/badge/demo-live%20on%20Vercel-black?logo=vercel)](https://studybot-8we9za292-lejmi-amines-projects.vercel.app/)
 ![Coverage](https://img.shields.io/badge/branch%20coverage-91.76%25-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
 ![Node](https://img.shields.io/badge/node-18%2B-blue)
@@ -26,7 +27,9 @@ StudyBot is a client-side React app built for students who need to convert raw s
 
 ## Quick Start
 
-Get StudyBot running locally in under 2 minutes.
+**Try it live:** [studybot-8we9za292-lejmi-amines-projects.vercel.app](https://studybot-8we9za292-lejmi-amines-projects.vercel.app/)
+
+Or run locally in under 2 minutes.
 
 **Prerequisites:**
 

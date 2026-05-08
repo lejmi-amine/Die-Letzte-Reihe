@@ -27,7 +27,7 @@ Sarah (24) arbeitet hauptsächlich nachts und wechselt zwischen Laptop und Smart
 - No API keys or sensitive data are exposed in the frontend
 - UI/UX has been reviewed and validated in both Dark Mode and Light Mode
 - Documentation (README) for setup, usage, and architecture is complete
-- The product has been deployed to a public or demo environment (e.g., Vercel)
+- The product has been deployed to a public environment: [studybot-8we9za292-lejmi-amines-projects.vercel.app](https://studybot-8we9za292-lejmi-amines-projects.vercel.app/)
 - Final acceptance testing with stakeholders (Dozent / Kommilitonen) is completed
 
 ---
