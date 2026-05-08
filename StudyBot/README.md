@@ -7,7 +7,7 @@ StudyBot is a client-side React app built for students who need to convert raw s
 > Software Engineering Project | Die Letzte Reihe
 
 [![CI](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml/badge.svg)](https://github.com/lejmi-amine/Die-Letzte-Reihe/actions/workflows/lint.yml)
-![Coverage](https://img.shields.io/badge/branch%20coverage-91.52%25-brightgreen)
+![Coverage](https://img.shields.io/badge/branch%20coverage-92.59%25-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
 ![Node](https://img.shields.io/badge/node-18%2B-blue)
 
@@ -58,14 +58,15 @@ StudyBot runs entirely in your browser — no external AI service, no API key, n
 ```mermaid
 flowchart LR
     A([📄 Your Text]) --> B[1. Extract Sentences\nsplit on . ! ?\nfilter < 20 chars]
-    B --> C[2. Extract Key Terms\nremove stopwords\nrank by frequency]
-    C --> D{Top Terms}
-    D --> E([🃏 Flashcards\nterm + matching sentence])
-    D --> F([📋 Summary\nintro · key points · conclusion])
-    D --> G([❓ Quiz\nmultiple choice · scoring])
+    B --> C[2. Stem + Filter\nstrip German suffixes\nremove stopwords]
+    C --> D[3. TF-IDF Scoring\nreward specific terms\npenalize generic ones]
+    D --> E{Top Terms}
+    E --> F([🃏 Flashcards\nterm + best matching sentence])
+    E --> G([📋 Summary\nterm-density sentence ranking])
+    E --> H([❓ Quiz\nmultiple choice · scoring])
 ```
 
-**Mental model:** Think of it as a smart highlighter. It finds the words that appear most in your text, assumes those are the most important concepts, and builds study material around them. The richer your input, the better the output — a dense lecture paragraph works much better than a bullet-point list.
+**Mental model:** Think of it as a smart highlighter with linguistic awareness. It groups inflected German word forms together (e.g. *Lernende*, *Lernenden*, *Lernender* → same concept), then ranks terms by how specific they are to your text rather than how often they appear globally. The richer your input, the better the output — a dense lecture paragraph works much better than a bullet-point list.
 
 ---
 
@@ -181,7 +182,7 @@ npm run test:coverage
 
 | Statements | Branches | Functions | Lines |
 | ---------- | -------- | --------- | ----- |
-| 100%       | 91.52%   | 100%      | 100%  |
+| 100%       | 92.59%   | 100%      | 100%  |
 
 The HTML coverage report opens at `coverage/index.html` after running `npm run test:coverage`.
 
@@ -206,7 +207,7 @@ The HTML coverage report opens at `coverage/index.html` after running `npm run t
 | UI framework | React 18 with Hooks                                     |
 | Build tool   | Vite 6                                                  |
 | Styling      | CSS-in-JS (inline styles with theme object)             |
-| NLP / logic  | Custom frequency-based extraction (`studybot.logic.js`) |
+| NLP / logic  | Custom TF-IDF + German stemmer + sentence scoring (`studybot.logic.js`) |
 | Testing      | Vitest + @vitest/coverage-v8                            |
 | CI           | GitHub Actions (Ruff linter + Vitest)                   |
 

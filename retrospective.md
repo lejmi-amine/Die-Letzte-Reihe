@@ -67,6 +67,8 @@ Wir wollten die regelbasierte Zusammenfassungs-Funktion durch ein echtes AI-Mode
 
 **Evidenz:** Drei Commits am 9. April dokumentieren den Zyklus: Integration (`ac433f5`), Teilrevert (`31b88e6`), vollständiger Revert (`fcd2ede`).
 
+**Nachtrag:** Als direkte Konsequenz haben wir den Algorithmus ohne externes Modell verbessert: Der neue Ansatz nutzt TF-IDF-Gewichtung, einen deutschen Suffix-Stemmer und term-dichtebasierte Satzauswahl (Commit `9ade3b5`). Das Ergebnis ist spürbar besser für deutschen Fachtext — ohne externe Abhängigkeit.
+
 ### 2. Kein Projektplan und keine strukturierte Aufgabenverteilung
 
 Wir hatten keinen richtigen Plan, wer wann was macht. Die Aufgaben wurden eher spontan verteilt und nicht über die Wochen gestreckt. Das hat dazu geführt, dass viel Arbeit in kurzen Sprints passiert ist, statt gleichmäßig über die Iteration. Es gab auch keine Issues auf GitHub die den Fortschritt tracken — man konnte also von außen nicht nachvollziehen, was gerade in Arbeit ist.
