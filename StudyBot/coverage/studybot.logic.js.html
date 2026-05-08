@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>240/240</span>
+                <span class='fraction'>251/251</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.35% </span>
+                <span class="strong">91.76% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>74/81</span>
+                <span class='fraction'>78/85</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>240/240</span>
+                <span class='fraction'>251/251</span>
             </div>
         
             
@@ -338,7 +338,20 @@
 <a name='L273'></a><a href='#L273'>273</a>
 <a name='L274'></a><a href='#L274'>274</a>
 <a name='L275'></a><a href='#L275'>275</a>
-<a name='L276'></a><a href='#L276'>276</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -517,6 +530,21 @@
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">90x</span>
+<span class="cline-any cline-yes">90x</span>
+<span class="cline-any cline-yes">90x</span>
+<span class="cline-any cline-yes">90x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
@@ -524,19 +552,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">58x</span>
-<span class="cline-any cline-yes">58x</span>
-<span class="cline-any cline-yes">58x</span>
-<span class="cline-any cline-yes">58x</span>
 <span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
@@ -791,27 +817,40 @@ export function generateSummary(text) {
     ? sentences[0]
     : "Der Text behandelt verschiedene Aspekte eines komplexen Themas.";
 &nbsp;
-  // Score each sentence by how many key terms it contains, normalized by length.
-  // Sentences with high term density are more informative than positional selection.
   const termSet = new Set(terms.slice(0, 10).map((t) =&gt; t.toLowerCase()));
-  const lastIdx = sentences.length - 1;
-  const candidates = sentences.slice(1, sentences.length &gt; 3 ? lastIdx : undefined);
 &nbsp;
-  const keyPoints = candidates
-    .map((sentence, i) =&gt; {
-      const lower = sentence.toLowerCase();
-      const words = lower.replace(/[^a-zäöüß\s]/gi, " ").split(/\s+/).filter(Boolean);
-      const hits = [...termSet].filter((t) =&gt; lower.includes(t)).length;
-      return { sentence, score: hits / Math.sqrt(words.length <span class="branch-0 cbranch-no" title="branch not covered" >|| 1)</span>, idx: i };
-    })
+  // Score every sentence by term density (hits / sqrt(length)) for stable selection.
+  const scoredAll = sentences.map((sentence, idx) =&gt; {
+    const lower = sentence.toLowerCase();
+    const words = lower.replace(/[^a-zäöüß\s]/gi, " ").split(/\s+/).filter(Boolean);
+    const hits = [...termSet].filter((t) =&gt; lower.includes(t)).length;
+    return { sentence, score: hits / Math.sqrt(words.length <span class="branch-0 cbranch-no" title="branch not covered" >|| 1)</span>, idx };
+  });
+&nbsp;
+  // Split into body (intro → 60%) and close (last 40%) so the two sections don't overlap.
+  const closeStart = sentences.length &gt; 3 ? Math.floor(sentences.length * 0.6) : undefined;
+&nbsp;
+  // Key points: body sentences scored by term density, then re-sorted into narrative order.
+  const keyPoints = scoredAll
+    .slice(1, closeStart)
     .sort((a, b) =&gt; b.score - a.score || a.idx - b.idx)
     .slice(0, 5)
     .sort((a, b) =&gt; a.idx - b.idx)
     .map((s) =&gt; s.sentence);
 &nbsp;
-  const closing = sentences.length &gt; 3
-    ? sentences[lastIdx]
-    : "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
+  // Fazit: best 1-2 sentences from last 40%, joined in reading order.
+  let closing;
+  if (sentences.length &gt; 3) {
+    closing = scoredAll
+      .slice(closeStart)
+      .sort((a, b) =&gt; b.score - a.score || a.idx - b.idx)
+      .slice(0, 2)
+      .sort((a, b) =&gt; a.idx - b.idx)
+      .map((s) =&gt; s.sentence)
+      .join(" ");
+  } else {
+    closing = "Die genannten Aspekte bilden zusammen ein umfassendes Bild des Themas.";
+  }
 &nbsp;
   let summary = `Überblick\n\n${intro}\n\n`;
   summary += `Kernpunkte\n\n`;
@@ -895,7 +934,7 @@ export function truncateToMaxChars(text) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-08T13:31:26.634Z
+                at 2026-05-08T16:52:36.125Z
             </div>
         <script src="prettify.js"></script>
         <script>

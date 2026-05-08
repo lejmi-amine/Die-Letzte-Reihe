@@ -1,185 +1,254 @@
-# Software Architecture – MoodFilm
+# Software Architecture — StudyBot
 
 ## 1. Introduction
 
-**MoodFilm** is a modern full-stack web application built with **Next.js**, featuring a modular, component-based architecture optimized for rapid feature development and excellent user experience.
+StudyBot is a client-side Single Page Application (SPA) built with React 18 and Vite. It converts raw lecture text into interactive study material — flashcards, summaries, and quizzes — entirely in the browser, with no server, no API calls, and no data leaving the user's device.
 
-**Architectural Goal:** Clean separation of concerns, type-safe development, and a scalable foundation for premium features.
+**Architectural Goal:** Clean separation of business logic from UI rendering, full testability without a browser environment, and zero external runtime dependencies.
 
 ---
 
 ## 2. Architectural Overview
 
-### 2.1 Full-Stack Monolith with Modular Design
+### 2.1 Single-Page Application (Client-Side Only)
 
-- **Single Codebase:** Next.js app combining frontend and API routes  
-- **Modular Components:** Feature-based folder structure  
-- **Type Safety:** End-to-end TypeScript  
-- **API Layer:** Serverless functions for backend logic  
+- **No backend:** All NLP processing runs in the user's browser via JavaScript
+- **No API calls at runtime:** No network requests after the initial page load
+- **No data persistence beyond `localStorage`:** Study session history is stored locally
 
-### 2.2 Layered Architecture
+### 2.2 Core Pattern: Single Responsibility Split
 
-| Layer | Responsibilities | Technologies |
-|:------|:------------------|:--------------|
-| **Presentation** | UI Components, Animations, Responsive Design | React, Tailwind, Framer Motion |
-| **Application** | Business Logic, State Management, Routing | Next.js, Zustand, React Router |
-| **API** | TMDB Integration, AI Processing, Authentication | Next.js API Routes, NextAuth |
-| **Data** | User Data, Caching, Sessions | PostgreSQL, Redis, Prisma |
-| **Infrastructure** | Deployment, Monitoring, CI/CD | Vercel, GitHub Actions |
+The single most important architectural decision is the strict separation of business logic from the React UI:
 
----
-
-## 3. Core Components & Modules
-
-### 3.1 Mood Selection Module
-- **Component:** `MoodSelector.tsx`  
-- **State:** Selected mood, mood categories  
-- **API:** Mood-to-genre mapping logic  
-- **Signals:** `onMoodSelect`, `onMoodChange`
-
-### 3.2 Movie Recommendation Engine
-- **Component:** `MovieGrid.tsx`  
-- **Service:** `tmdbService.ts` (API abstraction)  
-- **Logic:** Mood filtering, scoring algorithm  
-- **State:** Movies list, loading states, filters  
-
-### 3.3 User Management Module
-- **Components:** `AuthForm.tsx`, `UserProfile.tsx`  
-- **Service:** `authService.ts` (NextAuth integration)  
-- **State:** User session, preferences, favorites  
-
-### 3.4 Premium Features Module
-- **Components:** `PremiumThemes.tsx`, `SubscriptionModal.tsx`  
-- **Service:** `premiumService.ts` (Stripe integration)  
-- **Logic:** Feature gating, theme management  
-
-### 3.5 AI Emotion Detection (Phase 3)
-- **Component:** `EmotionInput.tsx`  
-- **Service:** `aiService.ts` (Hugging Face integration)  
-- **Logic:** Text sentiment analysis, mood mapping  
-
----
-
-## 4. Data Flow & State Management
-
-### 4.1 Client-Side State (Zustand)
-
-```typescript
-// Stores
-useMoodStore     // Current mood, mood history
-useMovieStore    // Movies, filters, loading states
-useUserStore     // User data, preferences, favorites
-usePremiumStore  // Subscription status, active themes
+```
+src/
+├── studybot.logic.js   ← Pure NLP functions (no React, no DOM, fully testable)
+└── StudyBot.jsx        ← React component (UI, state, event handlers only)
 ```
 
-### 4.2 Server-Side Data Flow
+This separation enables:
+- **Full unit testability** in Node.js without a browser or React test renderer
+- **Parallel development** — logic and UI can be developed independently
+- **Clean testing** — no DOM or React setup needed in tests
 
-1. User selects a mood → mapped to TMDB genres  
-2. API call to TMDB with mood filters  
-3. Response processed via scoring algorithm  
-4. Movies displayed with mood relevance indicators  
+### 2.3 Layered Architecture
 
-### 4.3 Authentication Flow
-
-- **Framework:** NextAuth.js with JWT sessions  
-- **Security:** Protected API routes for premium features  
-- **Rendering:** Server-side props for user-specific content  
+| Layer | File | Responsibility |
+|:------|:-----|:---------------|
+| **Presentation** | `StudyBot.jsx` | React components, state management, user events, theme system |
+| **Logic** | `studybot.logic.js` | NLP pipeline: sentence extraction, TF-IDF scoring, content generation |
+| **Tests** | `tests/studybot.logic.test.js` | 76 unit tests covering the logic layer exclusively |
+| **Config** | `vite.config.js` | Build configuration and coverage thresholds |
+| **CI** | `.github/workflows/lint.yml` | Ruff linter + Vitest on every push and pull request |
 
 ---
 
-## 5. Tech Stack Alignment
+## 3. NLP Pipeline Architecture
 
-| Concern | Tech Choice | Rationale |
-|:---------|:-------------|:-----------|
-| **Full-Stack Framework** | Next.js 14 | SSR/SSG, API routes, seamless Vercel integration |
-| **Type Safety** | TypeScript | Early error detection, strong developer experience |
-| **Styling** | Tailwind CSS | Rapid UI development, consistent design system |
-| **State Management** | Zustand | Lightweight, fast, less boilerplate than Redux |
-| **Database** | PostgreSQL + Prisma | Type-safe queries, migrations, Vercel integration |
-| **Deployment** | Vercel | Optimized for Next.js, automatic deployments |
-| **Payments** | Stripe | Robust subscription management |
-| **AI Integration** | Hugging Face | State-of-the-art models without infrastructure overhead |
+The entire NLP pipeline runs in `studybot.logic.js` as a chain of pure functions:
+
+```
+Input Text
+    │
+    ▼
+extractSentences()
+    splits on . ! ? · filters sentences < 20 chars
+    │
+    ▼
+extractKeyTerms()
+    lowercase · strip stopwords (DE + EN + generic adjectives)
+    → group by German suffix stem
+    → TF-IDF score + length bonus
+    → top 20 terms
+    │
+    ├──▶ generateFlashcards()
+    │        term → best matching sentence → front/back card pair
+    │
+    ├──▶ generateSummary()
+    │        intro:      sentences[0]
+    │        key points: body sentences scored by term density,
+    │                    top 5 selected, re-sorted into narrative order
+    │        key terms:  top 5, capitalized
+    │        fazit:      best 2 sentences from last 40% of text,
+    │                    joined in reading order
+    │
+    └──▶ generateQuiz()
+             term → correct answer from text + 3 constructed wrong answers
+             → correct answer placed at random index 0–3
+```
+
+### 3.1 German Suffix Stemmer
+
+A custom suffix stemmer (`stem()`) groups inflected German word forms under a shared stem key. This prevents "Photosynthese", "Photosynthesen", and "Photosyntheses" from being counted as three separate terms.
+
+Suffixes stripped in priority order:
+```
+ungen, schaft, heit, keit, lich, isch, ung, ern, eln, ster, sten,
+ende, enden, ender, ens, ers, est, em, er, es, en, e, s
+```
+
+Minimum stem length: 4 characters. Any stripping that would leave fewer than 4 characters is skipped.
+
+### 3.2 TF-IDF Scoring Formula
+
+```
+score = termCount × log((totalSentences + 1) / documentFrequency) × (1 + log(termLength / 4))
+```
+
+| Factor | Purpose |
+|:-------|:--------|
+| `termCount` | Raw frequency of the stem group |
+| `log((S+1)/df)` | IDF: rewards terms specific to few sentences |
+| `(1 + log(length/4))` | Length bonus: longer terms tend to be more domain-specific in German |
+
+### 3.3 Stopword Filtering
+
+The stopword list covers ~200 entries across three categories:
+- **German function words:** articles, prepositions, conjunctions, pronouns
+- **English function words:** for texts with mixed-language content (e.g. lecture slides)
+- **Generic German adjectives:** common modifiers that are almost never domain-specific (`wichtig*`, `groß*`, `neu*`, `möglich*`, `künstlich*`, etc.)
+
+---
+
+## 4. React Component Architecture
+
+`StudyBot.jsx` is a single-file component that manages all application state. Sub-components are co-located in the same file:
+
+| Component | Purpose |
+|:----------|:--------|
+| `StudyBot` (default export) | Root component — all state lives here |
+| `FlashcardComp` | Single flashcard with 3D flip animation and drag-and-drop support |
+| `MiniCard` | Compact card tile for grid view |
+| `QuizQuestion` | Quiz question with 4 answer options and reveal state |
+| `Loader` | Spinner shown during content generation |
+| `PomodoroTimer` | 25/5/15-minute Pomodoro timer in the header |
+| `LernkalenderComp` | Monthly calendar visualizing study history from `localStorage` |
+
+### 4.1 State Overview
+
+All state lives in the root `StudyBot` component and is passed down as props:
+
+| State | Type | Description |
+|:------|:-----|:------------|
+| `theme` | `"dark" \| "light"` | Active color theme |
+| `activeTab` | string | Current tab id (`input`, `cards`, `summary`, `quiz`, `history`) |
+| `inputText` | string | User's raw lecture text |
+| `cards` | Card[] | Generated flashcards |
+| `deck` | number[] | Weighted card ordering for Spaced Repetition |
+| `cardRatings` | object | Per-card `easy / medium / hard` rating |
+| `summary` | string | Generated summary text |
+| `quiz` | Question[] | Generated quiz questions |
+| `cardCount` | `6 \| 9 \| 12 \| 15` | Number of cards to generate |
+
+### 4.2 Theme System
+
+Colors are defined in a `THEMES` constant with `dark` and `light` keys. Every inline style in the component reads from `THEMES[theme]`. No hardcoded color values exist outside this object, which makes dark/light switching a single state toggle.
+
+---
+
+## 5. Data Flow
+
+```
+User types text
+    │
+    ▼
+[inputText state]
+    │
+    ▼
+generate() ──► studybot.logic.js
+                    │
+                    ├── generateFlashcards(inputText, cardCount)
+                    ├── generateSummary(inputText)
+                    └── generateQuiz(inputText)
+                    │
+                    ▼
+            [cards, summary, quiz states updated]
+                    │
+                    ▼
+            React re-render → navigate to "Karteikarten" tab
+```
 
 ---
 
 ## 6. Folder Structure
 
-```text
-moodfilm/
-├── app/                    # Next.js 14 app router
-│   ├── (auth)/             # Authentication routes
-│   ├── api/                # API routes
-│   │   ├── auth/           # NextAuth endpoints
-│   │   ├── movies/         # TMDB proxy endpoints
-│   │   └── premium/        # Stripe webhooks
-│   ├── moods/              # Mood selection page
-│   └── profile/            # User profile
-├── components/
-│   ├── ui/                 # Reusable UI components
-│   ├── moods/              # Mood-specific components
-│   ├── movies/             # Movie display components
-│   └── premium/            # Premium feature components
-├── lib/                    # Utilities and configurations
-│   ├── auth.ts             # NextAuth config
-│   ├── db.ts               # Prisma client
-│   └── tmdb.ts             # TMDB API client
-├── stores/                 # Zustand state stores
-├── types/                  # TypeScript definitions
-└── public/                 # Static assets
+```
+Die-Letzte-Reihe/
+├── StudyBot/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js              ← Vite + coverage config
+│   ├── src/
+│   │   ├── main.jsx                ← React entry point (StrictMode)
+│   │   ├── StudyBot.jsx            ← UI component (presentation layer)
+│   │   └── studybot.logic.js       ← NLP logic (logic layer, test target)
+│   └── tests/
+│       └── studybot.logic.test.js  ← 76 unit tests
+├── Docs/
+│   ├── Architecture.md             ← this file
+│   ├── TechStack.md
+│   ├── Unit-Tests.md
+│   ├── user-stories.md
+│   └── retrospective.md
+├── .github/
+│   └── workflows/
+│       └── lint.yml                ← CI pipeline (Ruff + Vitest)
+├── CONTRIBUTING.md
+└── retrospective.md
 ```
 
 ---
 
-## 7. Non-Functional Requirements
+## 7. Architecture Decision Records (ADRs)
 
-| Requirement | Architectural Approach |
-|:-------------|:-----------------------|
-| **Performance** | Next.js SSR/SSG, Redis caching, CDN for assets |
-| **Scalability** | Serverless API routes, connection pooling |
-| **Maintainability** | Feature-based structure, TypeScript, clear interfaces |
-| **Security** | NextAuth, protected API routes, environment variables |
-| **User Experience** | Instant mood switching, optimistic UI, smooth animations |
+### ADR-001 — Logic Extraction into `studybot.logic.js`
 
----
+| | |
+|---|---|
+| **Status** | Accepted |
+| **Context** | `StudyBot.jsx` started as a single file containing both UI and NLP logic |
+| **Decision** | Extract all pure functions into `studybot.logic.js` |
+| **Rationale** | Enables unit testing in Node without React/DOM; enforces SRP; allows parallel development |
+| **Consequences** | All generators and analyzers are pure functions with no side effects; imports are explicit |
 
-## 8. Architecture Decision Records (ADRs)
+### ADR-002 — No External AI API (Custom NLP Instead)
 
-### ADR-001 – Next.js over Separate Frontend/Backend
-- **Status:** Accepted  
-- **Context:** Need for rapid development and deployment  
-- **Decision:** Use Next.js full-stack framework  
-- **Rationale:** Faster development, better performance, simpler deployment  
-- **Consequences:** Monolithic codebase; modular structure mitigates coupling  
+| | |
+|---|---|
+| **Status** | Accepted |
+| **Context** | Initial attempt to use Transformers.js (distilbart-cnn-6-6) for abstractive summarization |
+| **Decision** | Implement extractive NLP with TF-IDF + German suffix stemmer |
+| **Rationale** | 350 MB model download made the app unusable; no API key required; no user data leaves the device |
+| **Consequences** | Output is extractive (sentences selected from text), not abstractive (sentences generated) |
 
-### ADR-002 – Zustand over Redux
-- **Status:** Accepted  
-- **Context:** Complex client-side state (moods, movies, user data)  
-- **Decision:** Use Zustand for state management  
-- **Rationale:** Less boilerplate, faster learning curve, strong TypeScript support  
-- **Consequences:** Smaller ecosystem than Redux, but sufficient for project needs  
+### ADR-003 — Vite over Create React App
 
-### ADR-003 – Vercel Platform
-- **Status:** Accepted  
-- **Context:** Need for seamless deployment and scaling  
-- **Decision:** Use Vercel ecosystem (Postgres, KV, Blob)  
-- **Rationale:** Optimized for Next.js, excellent developer experience  
-- **Consequences:** Platform lock-in, offset by development speed benefits  
+| | |
+|---|---|
+| **Status** | Accepted |
+| **Context** | Need for fast development iteration and native ESM module support |
+| **Decision** | Use Vite 6 with `@vitejs/plugin-react` |
+| **Rationale** | Near-instant HMR, native ESM aligns with Vitest, minimal configuration overhead |
+| **Consequences** | Less documentation available than CRA, but significantly better developer experience |
 
----
+### ADR-004 — Vitest over Jest
 
-## 9. Phase Implementation Strategy
-
-| Phase | Focus | Key Deliverables |
-|:------|:-------|:-----------------|
-| **Phase 1 – Core MVP** | Next.js setup, basic TMDB integration | TypeScript setup, mood selection, movie grid, Vercel deployment |
-| **Phase 2 – User Features** | Authentication & personalization | NextAuth, favorites system, family filters, Stripe foundation |
-| **Phase 3 – AI & Premium** | Intelligent & paid features | Hugging Face sentiment, premium themes, analytics, mobile optimization |
+| | |
+|---|---|
+| **Status** | Accepted |
+| **Context** | Testing a Vite-based project with `"type": "module"` in package.json |
+| **Decision** | Use Vitest instead of Jest |
+| **Rationale** | Native ESM support without Babel transforms; shares Vite config; faster for pure function tests |
+| **Consequences** | Smaller ecosystem than Jest, but fully sufficient for logic-only unit tests |
 
 ---
 
-## 10. Summary
+## 8. Non-Functional Requirements
 
-MoodFilm adopts a **modern, full-stack TypeScript architecture** centered on **Next.js** for both front- and back-end logic.  
-The **modular component structure** enables rapid feature development and maintainability, while **Vercel’s ecosystem** ensures seamless deployment and scalability.
-
----
+| Requirement | Approach |
+|:------------|:---------|
+| **Performance** | Full NLP pipeline completes in < 30 ms for 10,000-character input |
+| **Privacy** | Zero network calls at runtime; no user data transmitted anywhere |
+| **Testability** | 76 unit tests; 100% statement, function, and line coverage |
+| **Maintainability** | SRP: logic ↔ UI split; named exports; Conventional Commits format |
+| **Offline capability** | App functions without internet connection after the initial page load |
