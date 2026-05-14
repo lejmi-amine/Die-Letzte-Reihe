@@ -96,54 +96,99 @@ p{margin:0;color:var(--muted);line-height:1.55;font-size:20px}.eyebrow{font-fami
   <!-- SLIDE 6 — Architecture -->
   <section class="slide"><div class="layout two"><div class="stack"><div class="eyebrow animate-in">Architecture Decision</div><h2 class="animate-in" style="--d:.12s">Two files.<br>Two responsibilities.</h2><p class="animate-in" style="--d:.26s">The most important engineering decision: business logic is separated from UI, so the NLP engine is fully testable without React, DOM or browser.</p></div><div class="glass big-panel animate-in" style="--d:.20s"><div class="filetree"><span class="folder">StudyBot/src</span><br>├── <span class="logic">studybot.logic.js</span><br>│&nbsp;&nbsp;&nbsp; pure functions · NLP · generators<br>└── <span class="ui">StudyBot.jsx</span><br>&nbsp;&nbsp;&nbsp;&nbsp; React UI · state · animations</div><div class="code" style="margin-top:24px">validateInput → extractSentences → extractKeyTerms → generateFlashcards → generateSummary → generateQuiz</div></div></div></section>
 
-  <!-- SLIDE 7 — Code Walkthrough -->
-  <section class="slide"><div class="layout"><div class="stack"><div class="eyebrow animate-in">Code Walkthrough</div><h2 class="animate-in" style="--d:.12s">studybot.logic.js —<br><span class="gradient-text">die wichtigsten Teile.</span></h2><div class="row animate-in" style="--d:.22s"><span class="pill">289 Zeilen</span><span class="pill">8 Exports</span><span class="pill">76 Tests</span><span class="pill">0 DOM-Imports</span></div></div><div class="two animate-in" style="--d:.34s"><div class="glass big-panel"><div class="eyebrow" style="margin-bottom:14px;font-size:12px">German Suffix Stemmer</div><div class="code" style="font-size:13px;line-height:1.55">export function stem(word) {
-  const suffixes = [
-    "ungen","schaft","heit","keit",
-    "lich","isch","ung","ern","eln",
-    "er","es","en","e","s", <span style="color:#858097">// 23 total</span>
+  <!-- SLIDE 7 -- Code: stem() -->
+  <section class="slide"><div class="layout two"><div class="stack"><div class="eyebrow animate-in">Code Walkthrough 1 / 3</div><h2 class="animate-in" style="--d:.12s">stem() &mdash;<br><span class="gradient-text">Sprache verstehen.</span></h2><p class="animate-in" style="--d:.24s">Ohne Stemming z&auml;hlen &bdquo;Photosynthese&ldquo; und &bdquo;Photosynthesen&ldquo; als zwei verschiedene Begriffe. Der Stemmer fasst alle Flexionsformen unter einem Stamm zusammen &mdash; bevor TF-IDF sie bewertet.</p><div class="glass panel animate-in" style="--d:.38s"><div style="display:grid;grid-template-columns:1fr 22px 1fr;gap:9px 6px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:14px"><span style="color:#f87171">Photosynthesen</span><span style="color:var(--muted)">&rarr;</span><span class="green">Photosynthes</span><span style="color:#f87171">lernende</span><span style="color:var(--muted)">&rarr;</span><span class="green">lern</span><span style="color:#f87171">Karteikarten</span><span style="color:var(--muted)">&rarr;</span><span class="green">Karteikar</span><span style="color:#f87171">Schl&uuml;sselbegriffe</span><span style="color:var(--muted)">&rarr;</span><span class="green">Schl&uuml;sselbegriff</span><span style="color:#f87171">Zusammenfassung</span><span style="color:var(--muted)">&rarr;</span><span class="green">Zusammenfass</span></div></div></div><div class="glass big-panel animate-in" style="--d:.16s;overflow:hidden"><div class="code" style="font-size:13px;line-height:1.64"><span style="color:#9b8cf7">export function</span> <span style="color:#72f4ff">stem</span>(word) {
+  <span style="color:#9b8cf7">const</span> suffixes = [
+    <span style="color:#fbbf24">"ungen"</span>,  <span style="color:#fbbf24">"schaft"</span>, <span style="color:#fbbf24">"heit"</span>,  <span style="color:#fbbf24">"keit"</span>,
+    <span style="color:#fbbf24">"lich"</span>,   <span style="color:#fbbf24">"isch"</span>,   <span style="color:#fbbf24">"ung"</span>,   <span style="color:#fbbf24">"ern"</span>,   <span style="color:#fbbf24">"eln"</span>,
+    <span style="color:#fbbf24">"ster"</span>,   <span style="color:#fbbf24">"sten"</span>,   <span style="color:#fbbf24">"ende"</span>,  <span style="color:#fbbf24">"enden"</span>,
+    <span style="color:#fbbf24">"ender"</span>,  <span style="color:#fbbf24">"ens"</span>,    <span style="color:#fbbf24">"ers"</span>,   <span style="color:#fbbf24">"est"</span>,
+    <span style="color:#fbbf24">"em"</span>,     <span style="color:#fbbf24">"er"</span>,     <span style="color:#fbbf24">"es"</span>,    <span style="color:#fbbf24">"en"</span>,
+    <span style="color:#fbbf24">"e"</span>,      <span style="color:#fbbf24">"s"</span>,       <span style="color:#858097">// 23 Suffixmuster, strikt priorisiert</span>
   ];
-  for (const suffix of suffixes) {
-    if (word.endsWith(suffix)
-        &amp;&amp; word.length - suffix.length &gt;= 4)
-      return word.slice(0, -suffix.length);
+  <span style="color:#9b8cf7">for</span> (<span style="color:#9b8cf7">const</span> suffix <span style="color:#9b8cf7">of</span> suffixes) {
+    <span style="color:#9b8cf7">if</span> (word.<span style="color:#72f4ff">endsWith</span>(suffix)
+        &amp;&amp; word.length - suffix.length &gt;= <span style="color:#f87171">4</span>)
+      <span style="color:#9b8cf7">return</span> word.<span style="color:#72f4ff">slice</span>(<span style="color:#f87171">0</span>, -suffix.length);
   }
-  return word;
-}</div><p style="margin-top:16px;font-size:14px;color:var(--muted)">Photosynthesen → <span class="green">Photosynthes</span><br>lernende → <span class="green">lern</span><br>Karteikarten → <span class="green">Karteikar</span></p></div><div class="glass big-panel"><div class="eyebrow" style="margin-bottom:14px;font-size:12px">TF-IDF + Length Bonus</div><div class="code" style="font-size:13px;line-height:1.55">const idf = Math.log(
-  (totalSentences + 1) / df
-);
-const lengthBonus =
-  1 + Math.log(
-    Math.max(bestForm.length, 4) / 4
-  );
+  <span style="color:#9b8cf7">return</span> word;
+}</div></div></div></section>
 
-score = count * idf * lengthBonus;</div><p style="margin-top:16px;font-size:14px;color:var(--muted)">Häufig + spezifisch + lang<br>→ <span class="cyan">höherer Score</span><br>Stopwords &amp; Adjektive: gefiltert</p></div></div></div></section>
+  <!-- SLIDE 8 -- Code: TF-IDF -->
+  <section class="slide"><div class="layout two"><div class="glass big-panel animate-in" style="--d:.12s;overflow:hidden"><div class="eyebrow" style="font-size:11px;margin-bottom:14px">extractKeyTerms() &mdash; Scoring-Kern</div><div class="code" style="font-size:12.5px;line-height:1.58"><span style="color:#858097">// 1. W&ouml;rter nach Stamm gruppieren</span>
+words.<span style="color:#72f4ff">forEach</span>(w <span style="color:#9b8cf7">=&gt;</span> {
+  <span style="color:#9b8cf7">const</span> s = <span style="color:#72f4ff">stem</span>(w);
+  <span style="color:#9b8cf7">if</span> (!stemGroups[s])
+    stemGroups[s] = { count: <span style="color:#f87171">0</span>, forms: {} };
+  stemGroups[s].count++;
+  stemGroups[s].forms[w] = (stemGroups[s].forms[w] || <span style="color:#f87171">0</span>) + <span style="color:#f87171">1</span>;
+});
 
-  <!-- SLIDE 9 — Features -->
+<span style="color:#858097">// 2. Wie viele S&auml;tze enthalten diesen Stamm?</span>
+sentences.<span style="color:#72f4ff">forEach</span>(sentence <span style="color:#9b8cf7">=&gt;</span> {
+  <span style="color:#9b8cf7">const</span> lower = sentence.<span style="color:#72f4ff">toLowerCase</span>();
+  Object.<span style="color:#72f4ff">entries</span>(stemGroups)
+    .<span style="color:#72f4ff">forEach</span>(([s, { forms }]) <span style="color:#9b8cf7">=&gt;</span> {
+      <span style="color:#9b8cf7">if</span> (Object.<span style="color:#72f4ff">keys</span>(forms).<span style="color:#72f4ff">some</span>(f <span style="color:#9b8cf7">=&gt;</span> lower.<span style="color:#72f4ff">includes</span>(f)))
+        docFreq[s] = (docFreq[s] || <span style="color:#f87171">0</span>) + <span style="color:#f87171">1</span>;
+    });
+});
+
+<span style="color:#858097">// 3. TF-IDF &times; L&auml;ngebonus &rarr; Score</span>
+<span style="color:#9b8cf7">const</span> idf = Math.<span style="color:#72f4ff">log</span>((totalSentences + <span style="color:#f87171">1</span>) / df);
+<span style="color:#9b8cf7">const</span> lengthBonus =
+  <span style="color:#f87171">1</span> + Math.<span style="color:#72f4ff">log</span>(Math.<span style="color:#72f4ff">max</span>(bestForm.length, <span style="color:#f87171">4</span>) / <span style="color:#f87171">4</span>);
+<span style="color:#9b8cf7">return</span> [bestForm, count * idf * lengthBonus];
+<span style="color:#858097">// &rarr; .sort().slice(0,20) &mdash; Top 20 Begriffe</span></div></div><div class="stack"><div><div class="eyebrow animate-in">Code Walkthrough 2 / 3</div><h2 class="animate-in" style="--d:.12s">TF-IDF &mdash;<br><span class="gradient-text">Das Gehirn.</span></h2></div><div class="glass panel animate-in" style="--d:.26s"><p style="font-size:16px;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:16px">score = count &times; idf &times; lengthBonus</p><div style="display:flex;flex-direction:column;gap:11px;font-size:14px"><div style="display:flex;gap:12px;align-items:baseline"><span style="color:#72f4ff;font-family:'JetBrains Mono',monospace;min-width:108px">count</span><span style="color:var(--muted)">Wie oft das Wort im Text auftaucht</span></div><div style="display:flex;gap:12px;align-items:baseline"><span style="color:#72f4ff;font-family:'JetBrains Mono',monospace;min-width:108px">idf</span><span style="color:var(--muted)">log((S+1)/df) &mdash; je seltener, desto besser</span></div><div style="display:flex;gap:12px;align-items:baseline"><span style="color:#72f4ff;font-family:'JetBrains Mono',monospace;min-width:108px">lengthBonus</span><span style="color:var(--muted)">1 + log(len/4) &mdash; Komposita bevorzugen</span></div></div></div><div class="glass panel animate-in" style="--d:.40s"><p style="font-size:14px;color:var(--muted)"><span style="color:#fff">&bdquo;Photosynthese&ldquo;</span> &mdash; 13 Zeichen, 4&times; im Text, selten in S&auml;tzen &rarr; <span class="green">hoher Score</span></p><p style="font-size:14px;color:var(--muted);margin-top:10px"><span style="color:#fff">&bdquo;wichtig&ldquo;</span> &rarr; generisch &rarr; <span style="color:#f87171">manuell blockiert</span><br><span style="color:#fff">&bdquo;die&ldquo;</span> &rarr; Stopword &rarr; <span style="color:#f87171">herausgefiltert</span></p></div></div></div></section>
+
+  <!-- SLIDE 9 -- Code: generateFlashcards() -->
+  <section class="slide"><div class="layout two"><div class="glass big-panel animate-in" style="--d:.12s;overflow:hidden"><div class="eyebrow" style="font-size:11px;margin-bottom:14px">generateFlashcards() &mdash; Kernlogik</div><div class="code" style="font-size:12.5px;line-height:1.58"><span style="color:#9b8cf7">export function</span> <span style="color:#72f4ff">generateFlashcards</span>(text, count = <span style="color:#f87171">6</span>) {
+  <span style="color:#9b8cf7">const</span> sentences = <span style="color:#72f4ff">extractSentences</span>(text);
+  <span style="color:#9b8cf7">const</span> terms     = <span style="color:#72f4ff">extractKeyTerms</span>(text); <span style="color:#858097">// top 20</span>
+  <span style="color:#9b8cf7">const</span> usedSentences = <span style="color:#9b8cf7">new</span> <span style="color:#72f4ff">Set</span>();
+
+  <span style="color:#9b8cf7">for</span> (<span style="color:#9b8cf7">const</span> term <span style="color:#9b8cf7">of</span> terms) {
+    <span style="color:#9b8cf7">if</span> (cards.length &gt;= count) <span style="color:#9b8cf7">break</span>;
+    <span style="color:#9b8cf7">const</span> matches = <span style="color:#72f4ff">findSentencesWith</span>(sentences, term);
+
+    <span style="color:#9b8cf7">for</span> (<span style="color:#9b8cf7">const</span> match <span style="color:#9b8cf7">of</span> matches) {
+      <span style="color:#9b8cf7">if</span> (usedSentences.<span style="color:#72f4ff">has</span>(match)) <span style="color:#9b8cf7">continue</span>; <span style="color:#858097">// kein Duplikat</span>
+      usedSentences.<span style="color:#72f4ff">add</span>(match);
+      cards.<span style="color:#72f4ff">push</span>({
+        front: questionVariants[cards.length % <span style="color:#f87171">6</span>],
+        back:  match.<span style="color:#72f4ff">slice</span>(<span style="color:#f87171">0</span>, <span style="color:#f87171">200</span>),
+      });
+      <span style="color:#9b8cf7">break</span>;
+    }
+  }
+  <span style="color:#9b8cf7">return</span> cards;
+}</div></div><div class="stack"><div><div class="eyebrow animate-in">Code Walkthrough 3 / 3</div><h2 class="animate-in" style="--d:.12s">generateFlashcards() &mdash;<br><span class="gradient-text">Vom Begriff zur Karte.</span></h2><p class="animate-in" style="--d:.22s">Jeder Top-Begriff bekommt genau einen passenden Satz. Sechs Fragetypen rotieren. Kein Satz wird zweimal verwendet.</p></div><div class="glass panel animate-in" style="--d:.34s"><div style="display:flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px"><div><span style="color:var(--muted)">1.</span> <span style="color:#fbbf24">&bdquo;Was versteht man unter &hellip;?&ldquo;</span></div><div><span style="color:var(--muted)">2.</span> <span style="color:#fbbf24">&bdquo;Welche Rolle spielt &hellip;?&ldquo;</span></div><div><span style="color:var(--muted)">3.</span> <span style="color:#fbbf24">&bdquo;Erkl&auml;re den Begriff &hellip;&ldquo;</span></div><div><span style="color:var(--muted)">4.</span> <span style="color:#fbbf24">&bdquo;Was ist &hellip; und warum wichtig?&ldquo;</span></div><div><span style="color:var(--muted)">5.</span> <span style="color:#fbbf24">&bdquo;Beschreibe &hellip; in eigenen Worten.&ldquo;</span></div><div><span style="color:var(--muted)">6.</span> <span style="color:#fbbf24">&bdquo;Wie l&auml;sst sich &hellip; definieren?&ldquo;</span></div></div></div><div class="row animate-in" style="--d:.46s"><span class="pill">No Duplicates</span><span class="pill">6 Fragetypen</span><span class="pill">max 200 Zeichen</span></div></div></div></section>
+
+  <!-- SLIDE 10 — Features -->
   <section class="slide"><div class="layout"><div class="stack"><div class="eyebrow animate-in">Feature Overview</div><h2 class="animate-in" style="--d:.12s">A complete study session in one interface.</h2></div><div class="feature-grid"><div class="feature glass animate-in" style="--d:.16s"><div class="icon">🃏</div><b>3D Flashcards</b><p>Flip animation, keyboard navigation, grid view and drag &amp; drop ordering.</p></div><div class="feature glass animate-in" style="--d:.24s"><div class="icon">🧠</div><b>Spaced Rating</b><p>Easy appears 1×, Medium 2×, Hard 3× in the weighted deck.</p></div><div class="feature glass animate-in" style="--d:.32s"><div class="icon">📋</div><b>4-Part Summary</b><p>Überblick, Kernpunkte, Schlüsselbegriffe and Fazit from source text.</p></div><div class="feature glass animate-in" style="--d:.40s"><div class="icon">❓</div><b>MC Quiz</b><p>Five questions with A/B/C/D options and green/red reveal.</p></div><div class="feature glass animate-in" style="--d:.48s"><div class="icon">⏱️</div><b>Pomodoro</b><p>25/5/15 minute modes with an SVG progress ring in the header.</p></div><div class="feature glass animate-in" style="--d:.56s"><div class="icon">📅</div><b>Lernhistorie</b><p>localStorage calendar highlights study days and recent sessions.</p></div></div></div></section>
 
-  <!-- SLIDE 9 — Demo -->
+  <!-- SLIDE 11 — Demo -->
   <section class="slide"><div class="center"><div class="demo-card glass animate-in"><div class="eyebrow">Real Demo Flow</div><div class="demo-word gradient-text">DEMO</div><p style="font-size:24px;max-width:840px;margin:auto">One short live flow: paste lecture text → generate → flashcards → summary → quiz.</p><div class="url">studybot-8we9za292-lejmi-amines-projects.vercel.app</div><div class="demo-flow"><div class="demo-step"><span>01</span><b>Paste Text</b><p>Insert the Photosynthese sample text into the input area.</p></div><div class="demo-step"><span>02</span><b>Generate</b><p>Click „Lernmaterial generieren". Mention: no server request.</p></div><div class="demo-step"><span>03</span><b>Cards + Summary</b><p>Flip one card, show ratings, then open the 4-section summary.</p></div><div class="demo-step"><span>04</span><b>Quiz</b><p>Answer quickly, evaluate, show green/red feedback and score.</p></div></div></div></div></section>
 
-  <!-- SLIDE 10 — Testing -->
+  <!-- SLIDE 12 — Testing -->
   <section class="slide"><div class="layout two"><div class="stack"><div class="eyebrow animate-in">Testing</div><h2 class="animate-in" style="--d:.12s">Not just working.<br><span class="green">Verified.</span></h2><p class="animate-in" style="--d:.26s">The NLP engine runs in Node without DOM or React. That made it fast, deterministic and easy to test.</p><div class="row animate-in" style="--d:.4s"><span class="metric"><strong>76</strong><span>unit tests</span></span><span class="metric"><strong>36 ms</strong><span>test duration</span></span></div></div><div class="terminal animate-in" style="--d:.22s"><div class="termbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div class="greenline">✓ tests/studybot.logic.test.js (76 tests)</div><br><div>Test Files&nbsp;&nbsp;<span class="greenline">1 passed</span> (1)</div><div>Tests&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="greenline">76 passed</span> (76)</div><div>Duration&nbsp;&nbsp;&nbsp;&nbsp;<span class="greenline">36ms</span></div><br><div class="muteline">Coverage: 100% statements · 100% functions · 91.76% branches</div></div></div></section>
 
-  <!-- SLIDE 11 — CI/CD (+ SE process pills) -->
+  <!-- SLIDE 13 — CI/CD (+ SE process pills) -->
   <section class="slide"><div class="layout two-wide"><div class="stack"><div class="eyebrow animate-in">CI/CD</div><h2 class="animate-in" style="--d:.12s">Every push.<br>Every PR.<br>Green pipeline first.</h2><p class="animate-in" style="--d:.26s">GitHub Actions runs two parallel jobs: JavaScript tests with Vitest and Python linting with Ruff.</p><div class="row animate-in" style="--d:.42s;flex-wrap:wrap"><span class="pill">Feature Branches</span><span class="pill">Pull Requests</span><span class="pill">15 User Stories</span><span class="pill">Retrospektive</span></div></div><div class="stack"><div class="glass panel animate-in" style="--d:.18s"><h3>Job 1 — Vitest</h3><p>Runs all unit tests and coverage checks before merging.</p></div><div class="glass panel animate-in" style="--d:.32s"><h3>Job 2 — Ruff</h3><p>Checks Python files and keeps the repository clean.</p></div><div class="glass panel success animate-in" style="--d:.46s"><h3>Result</h3><p>No merge without a green pipeline.</p></div></div></div></section>
 
-  <!-- SLIDE 12 — Big Fail -->
+  <!-- SLIDE 14 — Big Fail -->
   <section class="slide"><div class="layout two"><div class="glass big-panel fail animate-in" style="--d:.12s"><div class="eyebrow red">The Big Fail</div><h2 style="font-size:68px;margin-top:14px">350 MB</h2><p style="font-size:23px">Transformers.js model download on first use made the app practically unusable.</p></div><div class="glass big-panel success animate-in" style="--d:.28s"><div class="eyebrow green">The Fix</div><h2 style="font-size:68px;margin-top:14px">Revert.</h2><p style="font-size:23px">We replaced it with a custom TF–IDF + German suffix stemmer. Lesson learned: spike branch first. Always.</p></div></div></section>
 
-  <!-- SLIDE 13 — Lessons Learned -->
+  <!-- SLIDE 15 — Lessons Learned -->
   <section class="slide"><div class="layout"><div class="stack"><div class="eyebrow animate-in">Lessons Learned</div><h2 class="animate-in" style="--d:.12s">The engineering lessons were bigger than the features.</h2></div><div class="feature-grid"><div class="feature glass animate-in" style="--d:.18s"><div class="icon">🏗️</div><b>Architecture first</b><p>Early separation of logic and UI made every later step easier.</p></div><div class="feature glass animate-in" style="--d:.30s"><div class="icon">🧪</div><b>Spike before dependency</b><p>External libraries must prove themselves before becoming core architecture.</p></div><div class="feature glass animate-in" style="--d:.42s"><div class="icon">📊</div><b>Read coverage</b><p>Coverage reports are not decoration — they reveal weak branches.</p></div><div class="feature glass animate-in" style="--d:.54s"><div class="icon">🛡️</div><b>CI saves you</b><p>Git workflow and tests protect the team from accidental breakage.</p></div><div class="feature glass animate-in" style="--d:.66s"><div class="icon">🇩🇪</div><b>German NLP is special</b><p>Inflection and generic adjectives need stronger filtering.</p></div><div class="feature glass animate-in" style="--d:.78s"><div class="icon">🧭</div><b>Real users matter</b><p>Personas kept the project focused on actual student pain.</p></div></div></div></section>
 
-  <!-- SLIDE 14 — Tech Stack -->
+  <!-- SLIDE 16 — Tech Stack -->
   <section class="slide"><div class="layout two"><div class="stack"><div class="eyebrow animate-in">Tech Stack</div><h2 class="animate-in" style="--d:.12s">Small stack.<br>Strong result.</h2><p class="animate-in" style="--d:.26s">No backend. No database. No AI API. The product is a fast static SPA with a custom local NLP engine.</p></div><div class="glass big-panel animate-in" style="--d:.18s"><div class="logo-cloud"><span class="tech">React 18</span><span class="tech">Vite 6</span><span class="tech">JavaScript ES2022</span><span class="tech">Vitest</span><span class="tech">GitHub Actions</span><span class="tech">Vercel</span><span class="tech">localStorage</span><span class="tech">CSS-in-JS</span><span class="tech">Custom TF–IDF</span><span class="tech">German Stemmer</span></div></div></div></section>
 
-  <!-- SLIDE 15 — Deployed -->
+  <!-- SLIDE 17 — Deployed -->
   <section class="slide"><div class="center"><div class="demo-card glass animate-in"><div class="eyebrow">Deployed &amp; Live</div><h2 style="margin-top:18px">Try it now.</h2><p style="font-size:24px;max-width:760px;margin:24px auto 0">A static Vercel deployment — fast, private and ready for the demo.</p><div class="url">https://studybot-8we9za292-lejmi-amines-projects.vercel.app/</div><div class="row" style="justify-content:center;margin-top:36px"><span class="pill">Live App</span><span class="pill">GitHub Repository</span><span class="pill">CI/CD</span></div></div></div></section>
 
-  <!-- SLIDE 16 — Final / Memorial -->
+  <!-- SLIDE 18 — Final / Memorial -->
   <section class="slide memorial-slide"><div class="layout two-wide memorial-layout"><div class="stack memorial-left"><div class="eyebrow animate-in">Final Slide</div><h2 class="animate-in" style="--d:.12s">Danke für eure<br><span class="gradient-text">Aufmerksamkeit</span></h2><div class="row animate-in" style="--d:.24s;margin-top:8px"><div class="bot-emblem">🤖</div><div><h3 style="font-size:52px;margin-bottom:4px">Study<span class="accent">Bot</span></h3><p style="font-size:28px;color:#cfc7ff">Die letzte Reihe</p></div></div><div class="glass big-panel animate-in memorial-quote" style="--d:.38s;margin-top:20px"><p style="font-size:28px;color:#fff;line-height:1.35">„Wir waren mal 6. Jetzt sind wir nur noch 2 — aber dafür <b class="accent">produktiv.</b>"</p><div style="height:1px;background:rgba(255,255,255,.16);margin:22px 0"></div><p style="font-size:22px">🪦 4 Teammitglieder wurden exmatrikuliert —<br>wir vergessen euch nie.</p></div><div class="glass panel animate-in" style="--d:.52s;margin-top:18px"><div class="row" style="justify-content:space-between"><span class="pill">Amine Lejmi &amp; David Liebermann</span><span class="pill">Fragen?</span></div></div></div><div class="memorial-right animate-in" style="--d:.22s"><div class="memorial-title"><div class="heart">♡</div><h3>In loving memory</h3><p>of our original team</p></div><div class="memorial-grid"><div class="mem-card glass"><div class="halo"></div><div class="portrait"></div><div class="rip-label">Disconnected from GitHub</div><div class="rip-name">Alex</div></div><div class="mem-card glass"><div class="halo"></div><div class="portrait male-two"></div><div class="rip-label">Merge conflict victim</div><div class="rip-name">Jan</div></div><div class="mem-card glass"><div class="halo"></div><div class="portrait male-three"></div><div class="rip-label">Lost in Sprint 1</div><div class="rip-name">Stani</div></div><div class="mem-card glass"><div class="halo"></div><div class="portrait"></div><div class="rip-label">Exmatrikuliert but cached</div><div class="rip-name">Leon</div></div></div><div class="memorial-plaque glass"><span>GPA: Unvergessen</span><span>Deadline: Für immer</span></div><p style="text-align:center;margin-top:12px;font-size:13px;color:rgba(255,255,255,.5);position:relative;z-index:2">*Nur Spaß — wir grüßen unsere ursprünglichen Teammitglieder.</p></div></div></section>
 </div>
 <div class="progress"><span id="progress"></span></div><div class="navhint">→ / ← navigate · Space next · F fullscreen</div>

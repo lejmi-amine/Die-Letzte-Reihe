@@ -32,15 +32,18 @@ You should sound confident, natural and slightly relaxed.
 | 4 | Target users | David |
 | 5 | How it works / NLP | Amine |
 | 6 | Architecture | Amine |
-| 7 | Features | David |
-| 8 | Real demo flow | Amine + David |
-| 9 | Testing | Amine |
-| 10 | CI/CD | David |
-| 11 | Big fail | Amine |
-| 12 | Lessons learned | Amine |
-| 13 | Tech stack | David |
-| 14 | Deployed & live | David |
-| 15 | Final / memorial joke | Amine |
+| 7 | Code: stem() | Amine |
+| 8 | Code: TF-IDF scoring | Amine |
+| 9 | Code: generateFlashcards() | Amine |
+| 10 | Features | David |
+| 11 | Real demo flow | Amine + David |
+| 12 | Testing | Amine |
+| 13 | CI/CD | David |
+| 14 | Big fail | Amine |
+| 15 | Lessons learned | Amine |
+| 16 | Tech stack | David |
+| 17 | Deployed & live | David |
+| 18 | Final / memorial joke | Amine |
 
 ---
 
@@ -235,11 +238,134 @@ Man könnte die NLP-Logik theoretisch auch in Node, in einem Service Worker oder
 
 ## Transition
 
-Neben dieser Architektur haben wir mehrere konkrete Features umgesetzt.
+Jetzt schauen wir uns den Code direkt an — in drei konkreten Teilen.
 
 ---
 
-# Slide 7 — Features Overview
+# Slide 7 — Code: stem()
+
+**Speaker:** Amine  
+**Goal:** Show the German stemmer — the most linguistically interesting part of the codebase.
+
+## Keywords
+
+- Suffix-Stripping
+- 23 Muster
+- Prioritätsreihenfolge
+- Mindestlänge 4
+
+## What's on the slide
+
+- Left: explanation + transformation table (5 before/after examples in red → green)
+- Right: full `stem()` function with syntax highlighting
+
+## Script
+
+Jetzt schauen wir uns konkret an, wie dieser Stemmer aussieht.
+
+Die Funktion heißt `stem` und bekommt ein einzelnes Wort übergeben.
+
+Zuerst definiert sie eine Liste von 23 deutschen Suffixmustern. Diese sind **strikt priorisiert**: längere Suffixe wie `"ungen"` oder `"schaft"` stehen ganz oben — damit „Auflösungen" nicht erst auf `"s"` matcht und seinen Stamm falsch abschneidet.
+
+Die Schleife geht die Liste von oben nach unten durch. Beim ersten Treffer gibt die Funktion sofort zurück. Außerdem gilt: Der verbleibende Stamm muss mindestens **4 Zeichen** lang sein — damit kurze Wörter wie „die" nicht auf ein einzelnes Zeichen reduziert werden.
+
+Auf der linken Seite seht ihr fünf konkrete Beispiele: `Photosynthesen` wird zu `Photosynthes`, `lernende` zu `lern`, `Schlüsselbegriffe` zu `Schlüsselbegriff`. Alle diese Formen landen danach beim TF-IDF unter demselben Eintrag — als wären sie ein Begriff.
+
+Das ist kein Machine Learning, das ist regelbasierte Linguistik. Deterministisch, erklärbar, testbar.
+
+## Transition
+
+Mit diesen Stämmen geht es weiter in den Scoring-Schritt.
+
+---
+
+# Slide 8 — Code: TF-IDF Scoring
+
+**Speaker:** Amine  
+**Goal:** Explain the intelligence behind term selection — this is the hardest but most impressive part.
+
+## Keywords
+
+- stemGroups
+- docFreq
+- idf = log((S+1)/df)
+- lengthBonus
+- score = count × idf × lengthBonus
+
+## What's on the slide
+
+- Left: the 3-step scoring core from `extractKeyTerms()` with syntax highlighting
+- Right: formula breakdown + two concrete examples
+
+## Script
+
+Slide 8 zeigt das eigentliche Gehirn hinter der Begriffsauswahl.
+
+Der Code hat drei Schritte.
+
+**Schritt 1:** Alle Wörter werden in Gruppen nach ihrem Stamm zusammengefasst. `stemGroups` speichert, wie oft jeder Stamm vorkommt und welche Wortformen aufgetreten sind.
+
+**Schritt 2:** Für jeden Stamm zählen wir, in wie vielen Sätzen er vorkommt — die sogenannte Dokumentfrequenz `df`.
+
+**Schritt 3:** Der Score wird berechnet nach der Formel: `count × idf × lengthBonus`.
+
+Was bedeutet das konkret?
+
+- `count` — wie oft taucht das Wort auf.
+- `idf` — das ist `log((Sätze + 1) / df)`. Je seltener ein Begriff in verschiedenen Sätzen vorkommt, desto höher dieser Wert. Das bestraft generische Wörter, die überall stehen.
+- `lengthBonus` — `1 + log(Länge / 4)`. Längere Wörter sind im Deutschen oft domänenspezifisch. `Chloroplast` ist relevanter als `gut`.
+
+Auf der rechten Seite seht ihr zwei Beispiele: „Photosynthese" — 13 Zeichen, häufig im Text, aber nicht in jedem Satz — bekommt einen hohen Score. „wichtig" dagegen ist ein generisches Adjektiv und ist manuell in der Stopword-Liste blockiert.
+
+Das Ergebnis: Die Top-20 Begriffe mit dem höchsten Score werden zurückgegeben — und aus denen entstehen Karten, Zusammenfassung und Quiz.
+
+## Transition
+
+Und jetzt sehen wir, wie aus diesen Begriffen konkrete Karteikarten werden.
+
+---
+
+# Slide 9 — Code: generateFlashcards()
+
+**Speaker:** Amine  
+**Goal:** Show how terms become usable study material — the output layer.
+
+## Keywords
+
+- extractKeyTerms → top 20
+- findSentencesWith
+- usedSentences Set (no duplicates)
+- 6 Fragetypen
+- cards.length % 6
+
+## What's on the slide
+
+- Left: full `generateFlashcards()` function with syntax highlighting
+- Right: the 6 question templates + 3 pills (No Duplicates, 6 Fragetypen, max 200 Zeichen)
+
+## Script
+
+Der dritte Code-Teil zeigt, wie aus den Top-20-Begriffen konkrete Karteikarten entstehen.
+
+Die Funktion `generateFlashcards` bekommt den Rohtext und eine gewünschte Kartenzahl — standardmäßig 6.
+
+Zuerst werden Sätze extrahiert, dann die Top-Begriffe. Dann läuft eine Schleife über jeden Begriff.
+
+Für jeden Begriff sucht `findSentencesWith` nach allen Sätzen im Text, die diesen Begriff enthalten. Der **erste passende Satz**, der noch nicht verwendet wurde, wird als Kartenrückseite genommen. Das `Set` namens `usedSentences` stellt sicher, dass kein Satz zweimal vorkommt.
+
+Die Vorderseite der Karte — also die Frage — kommt aus einem Array von **6 verschiedenen Fragetypen**: „Was versteht man unter …?", „Welche Rolle spielt …?", und so weiter. Der Index `cards.length % 6` rotiert durch alle 6 Typen, damit die Karten abwechslungsreich bleiben.
+
+Das Ergebnis ist ein Array von Karten-Objekten mit `front` und `back`. Jede Karte ist direkt anzeigbar.
+
+Fertig — 289 Zeilen, 8 Exports, 76 Tests, null externe Dependencies.
+
+## Transition
+
+Jetzt schauen wir uns an, was StudyBot in der Praxis kann — live.
+
+---
+
+# Slide 10 — Features Overview
 
 **Speaker:** David  
 **Goal:** Summarize the product features.
@@ -269,7 +395,7 @@ Jetzt zeigen wir euch das Ganze einmal live.
 
 ---
 
-# Slide 8 — Real Demo Flow
+# Slide 11 — Real Demo Flow
 
 **Speaker:** Amine leads, David supports  
 **Goal:** Show the wow moment.
@@ -353,7 +479,7 @@ Damit das Ganze nicht nur live funktioniert, haben wir die Kernlogik intensiv ge
 
 ---
 
-# Slide 9 — Testing
+# Slide 12 — Testing
 
 **Speaker:** Amine  
 **Goal:** Show reliability and quality.
@@ -384,7 +510,7 @@ Damit diese Qualität auch im Team erhalten bleibt, haben wir CI/CD eingesetzt.
 
 ---
 
-# Slide 10 — CI/CD
+# Slide 13 — CI/CD
 
 **Speaker:** David  
 **Goal:** Explain professional workflow.
@@ -415,7 +541,7 @@ Natürlich lief während des Projekts aber nicht alles perfekt.
 
 ---
 
-# Slide 11 — The Big Fail
+# Slide 14 — The Big Fail
 
 **Speaker:** Amine  
 **Goal:** Show maturity and learning.
@@ -448,7 +574,7 @@ Aus diesem Fehler und aus dem gesamten Projekt haben wir einige wichtige Learnin
 
 ---
 
-# Slide 12 — Lessons Learned
+# Slide 15 — Lessons Learned
 
 **Speaker:** Amine  
 **Goal:** Summarize what you learned as software engineers.
@@ -480,7 +606,7 @@ Schauen wir uns noch kurz an, mit welchem Stack wir das umgesetzt haben.
 
 ---
 
-# Slide 13 — Tech Stack
+# Slide 16 — Tech Stack
 
 **Speaker:** David  
 **Goal:** Show the stack is intentionally simple.
@@ -512,7 +638,7 @@ Das Projekt ist auch nicht nur lokal vorhanden, sondern live deployed.
 
 ---
 
-# Slide 14 — Deployed & Live
+# Slide 17 — Deployed & Live
 
 **Speaker:** David  
 **Goal:** Show that the app is real and usable.
@@ -540,7 +666,7 @@ Damit kommen wir zum Abschluss.
 
 ---
 
-# Slide 15 — Final Slide / Memorial Joke
+# Slide 18 — Final Slide / Memorial Joke
 
 **Speaker:** Amine  
 **Goal:** End memorable, funny and confident.
@@ -582,7 +708,7 @@ Vielen Dank für eure Aufmerksamkeit — und wir freuen uns auf eure Fragen.
 
 # Emergency Short Version
 
-If you are running out of time, use this ending:
+If you are running out of time, skip slides 7–9 and use this ending:
 
 StudyBot macht aus einem Text direkt Karteikarten, Zusammenfassung und Quiz.  
 Alles läuft lokal im Browser, ohne Account, ohne API und ohne Datenübertragung.  
@@ -593,19 +719,20 @@ Vielen Dank für eure Aufmerksamkeit.
 
 # Timing Suggestion
 
-| Part | Time |
-|---|---|
-| Intro + Problem | 1:30 |
-| Solution + Users | 1:45 |
-| NLP + Architecture | 2:15 |
-| Features | 1:00 |
-| Demo | 4:00–5:00 |
-| Testing + CI/CD | 1:45 |
-| Big Fail + Lessons | 2:00 |
-| Tech Stack + Deployment | 1:15 |
-| Final | 0:45 |
+| Part | Slides | Time |
+|---|---|---|
+| Intro + Problem | 1–2 | 1:30 |
+| Solution + Users | 3–4 | 1:45 |
+| NLP + Architecture | 5–6 | 2:15 |
+| **Code Walkthrough** | **7–9** | **6:00–8:00** |
+| Features | 10 | 1:00 |
+| Demo | 11 | 4:00–5:00 |
+| Testing + CI/CD | 12–13 | 1:45 |
+| Big Fail + Lessons | 14–15 | 2:00 |
+| Tech Stack + Deployment | 16–17 | 1:15 |
+| Final | 18 | 0:45 |
 
-Total: around 15–17 minutes depending on demo speed.
+Total: around 22–25 minutes depending on demo and code walk speed.
 
 ---
 
@@ -614,8 +741,11 @@ Total: around 15–17 minutes depending on demo speed.
 Speak slower than you think.
 
 Pause after:
-- “22 Uhr. Klausur morgen früh.”
-- “Keine Daten verlassen das Gerät.”
-- “Das läuft komplett client-side.”
-- “350 MB.”
-- “Wir waren mal 6.”
+- "22 Uhr. Klausur morgen früh."
+- "Keine Daten verlassen das Gerät."
+- "Das läuft komplett client-side."
+- "23 Suffixmuster, strikt priorisiert."
+- "score = count × idf × lengthBonus."
+- "289 Zeilen. 8 Exports. 76 Tests. Null externe Dependencies."
+- "350 MB."
+- "Wir waren mal 6."
