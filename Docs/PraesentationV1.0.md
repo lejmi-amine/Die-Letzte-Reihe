@@ -53,7 +53,7 @@ Jedes dieser Tools braucht einen Account, speichert Daten auf fremden Servern un
 
 StudyBot ist eine **clientseitige React-SPA** — kein Backend, keine Datenbank, keine externen API-Calls nach dem Seitenaufruf.
 
-### Warum kein AI-Modell?
+### Warum kein KI-Modell?
 
 Wir haben Transformers.js (distilbart-cnn-6-6) versucht:
 - Ergebnis: **350 MB Download beim ersten Start** — App praktisch unnutzbar
