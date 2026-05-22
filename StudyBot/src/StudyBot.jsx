@@ -797,7 +797,8 @@ export default function StudyBot() {
                 <>
                   <FlashcardComp card={cards[currentCardIdx]} index={cardIndex} total={deck.length} theme={theme}
                     onDragStart={setDragIdx} onDragOver={setDragOverIdx} onDrop={handleCardDrop}
-                    isDragOver={dragOverIdx === cardIndex} />
+                    isDragOver={dragOverIdx === cardIndex}
+                    flipped={flippedCard} onFlip={() => setFlippedCard((f) => !f)} />
 
                   {/* Rating buttons */}
                   <div style={{ marginTop: 20, textAlign: "center" }}>
